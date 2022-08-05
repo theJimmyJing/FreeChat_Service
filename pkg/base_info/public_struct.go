@@ -1,12 +1,14 @@
 package base_info
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type ApiUserInfo struct {
-	UserID      string `json:"userID" binding:"required,min=1,max=64" swaggo:"true,用户ID,"`
+	UserID      string `json:"address" binding:"required,min=1,max=64" swaggo:"true,用户ID,"`
+	Password    string `json:"password" binding:"required,min=1,max=64" swaggo:"true,password,"`
 	Nickname    string `json:"nickname" binding:"omitempty,min=1,max=64" swaggo:"true,my id,19"`
 	FaceURL     string `json:"faceURL" binding:"omitempty,max=1024"`
 	Gender      int32  `json:"gender" binding:"omitempty,oneof=0 1 2"`
