@@ -32,13 +32,13 @@ func main() {
 	defaultPorts := config.FreechatConfig.Freechat.Port
 	ginPort := flag.Int("port", defaultPorts[0], "get ginServerPort from cmd,default 10005 as port")
 	flag.Parse()
-	fmt.Println("start demo api server, port: ", *ginPort)
+	fmt.Println("start freechat api server, port: ", *ginPort)
 	address := "0.0.0.0:" + strconv.Itoa(*ginPort)
 	if config.FreechatConfig.Api.ListenIP != "" {
 		address = config.FreechatConfig.Api.ListenIP + ":" + strconv.Itoa(*ginPort)
 	}
 	address = config.FreechatConfig.CmsApi.ListenIP + ":" + strconv.Itoa(*ginPort)
-	fmt.Println("start demo api server address: ", address)
+	fmt.Println("start freechat api server address: ", address)
 	err := r.Run(address)
 	if err != nil {
 		log.Error("", "run failed ", *ginPort, err.Error())
