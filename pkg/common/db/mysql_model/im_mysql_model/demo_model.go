@@ -11,11 +11,19 @@ func GetRegister(account, areaCode string) (*db.Register, error) {
 		return nil, err
 	}
 	var r db.Register
-	return &r, dbConn.Table("registers").Where("account = ? or account =? and area_code=?",
-		account, account, areaCode).Take(&r).Error
+	return &r, dbConn.Table("registers").Where("account = ?", account).Take(&r).Error
 }
 
-func SetPassword(account, password, ex, userID, areaCode string) error {
+func GetEmail(userID string) (*db.User, error) {
+	dbConn, err := db.DB.MysqlDB.DefaultGormDB()
+	if err != nil {
+		return nil, err
+	}
+	var r db.User
+	return &r, dbConn.Table("users").Where("user_id = ?", userID).Take(&r).Error
+}
+
+func InsertRegister(account, password, ex, userID, areaCode string) error {
 	r := db.Register{
 		Account:  account,
 		Password: password,

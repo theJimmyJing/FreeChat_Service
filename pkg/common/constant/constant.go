@@ -177,8 +177,10 @@ const (
 	// verificationCode used for
 	VerificationCodeForRegister       = 1
 	VerificationCodeForReset          = 2
+	VerificationCodeForLogin          = 3
 	VerificationCodeForRegisterSuffix = "_forRegister"
 	VerificationCodeForResetSuffix    = "_forReset"
+	VerificationCodeForLoginSuffix    = "_forLogin"
 
 	//callbackCommand
 	CallbackBeforeSendSingleMsgCommand = "callbackBeforeSendSingleMsgCommand"

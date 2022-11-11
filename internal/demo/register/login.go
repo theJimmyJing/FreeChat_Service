@@ -4,6 +4,7 @@ import (
 	api "Open_IM/pkg/base_info"
 	"Open_IM/pkg/common/config"
 	"Open_IM/pkg/common/constant"
+	"Open_IM/pkg/common/db"
 	"Open_IM/pkg/common/db/mysql_model/im_mysql_model"
 	http2 "Open_IM/pkg/common/http"
 	"Open_IM/pkg/common/log"
@@ -15,12 +16,16 @@ import (
 )
 
 type ParamsLogin struct {
-	Email       string `json:"email"`
-	PhoneNumber string `json:"phoneNumber"`
-	Password    string `json:"password"`
-	Platform    int32  `json:"platform"`
-	OperationID string `json:"operationID" binding:"required"`
-	AreaCode    string `json:"areaCode"`
+	// 加一个userID donedone
+	// 加一个验证码 donedone
+	VerificationCode string `json:"verificationCode" binding:"required"`
+	UserID           string `json:"userID" binding:"required"`
+	Email            string `json:"email"`
+	PhoneNumber      string `json:"phoneNumber"`
+	Password         string `json:"password"`
+	Platform         int32  `json:"platform"`
+	OperationID      string `json:"operationID" binding:"required"`
+	AreaCode         string `json:"areaCode"`
 }
 
 func Login(c *gin.Context) {
@@ -29,13 +34,24 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"errCode": constant.FormattingError, "errMsg": err.Error()})
 		return
 	}
-	var account string
-	if params.Email != "" {
-		account = params.Email
-	} else {
-		account = params.PhoneNumber
+	// 判断邮箱是否存在 donedone
+	// TODO 调试的时候看下uid不存在是报err还是咋地
+	eml, err := im_mysql_model.GetEmail(params.UserID)
+	if err != nil || eml.Email == "" {
+		c.JSON(http.StatusOK, gin.H{"errCode": constant.NotRegistered, "errMsg": "The Email has not been registered"})
 	}
 
+	account := params.Email
+	// 登录需要验证邮箱 donedone
+	if params.VerificationCode != config.Config.Demo.SuperCode {
+		accountKey := account + "_" + constant.VerificationCodeForLoginSuffix
+		v, err := db.DB.GetAccountCode(accountKey)
+		if err != nil || v != params.VerificationCode {
+			log.NewError(params.OperationID, "password Verification code error", account, params.VerificationCode)
+			c.JSON(http.StatusOK, gin.H{"errCode": constant.CodeInvalidOrExpired, "errMsg": "Verification code error!"})
+			return
+		}
+	}
 	r, err := im_mysql_model.GetRegister(account, params.AreaCode)
 	if err != nil {
 		log.NewError(params.OperationID, "user have not register", params.Password, account, err.Error())

@@ -7,8 +7,9 @@ import (
 )
 
 type ApiUserInfo struct {
+	// registers表里password字段改为非必须 donedone
 	UserID      string `json:"address" binding:"required,min=1,max=64" swaggo:"true,用户ID,"`
-	Password    string `json:"password" binding:"required,min=1,max=64" swaggo:"true,password,"`
+	Password    string `json:"password" binding:"omitempty,min=1,max=64" swaggo:"true,password,"`
 	Nickname    string `json:"nickname" binding:"omitempty,min=1,max=64" swaggo:"true,my id,19"`
 	FaceURL     string `json:"faceURL" binding:"omitempty,max=1024"`
 	Gender      int32  `json:"gender" binding:"omitempty,oneof=0 1 2"`
