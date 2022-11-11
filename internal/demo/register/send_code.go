@@ -63,11 +63,13 @@ func SendVerificationCode(c *gin.Context) {
 		r, err := im_mysql_model.GetEmail(params.UserID)
 		if err != nil || r.Email == "" {
 			c.JSON(http.StatusOK, gin.H{"errCode": constant.NotRegistered, "errMsg": err.Error()})
+			return
 		}
 		account = r.Email
 	}
 	if account == "" {
 		c.JSON(http.StatusOK, gin.H{"errCode": constant.MailSendCodeErr, "errMsg": "The email is empty"})
+		return
 	}
 	// 修改验证码存储的key  donedone
 	var accountKey = account

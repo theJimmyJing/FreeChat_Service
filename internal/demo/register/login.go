@@ -39,6 +39,7 @@ func Login(c *gin.Context) {
 	eml, err := im_mysql_model.GetEmail(params.UserID)
 	if err != nil || eml.Email == "" {
 		c.JSON(http.StatusOK, gin.H{"errCode": constant.NotRegistered, "errMsg": "The Email has not been registered"})
+		return
 	}
 
 	account := params.Email

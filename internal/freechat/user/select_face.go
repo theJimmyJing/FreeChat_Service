@@ -12,22 +12,23 @@ func SelectFace(c *gin.Context) {
 	faces, err := fc_mysql_model.GetFacesURL()
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"errCode": constant.ErrDB, "errMsg": "internal err"})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"errCode": constant.NoError, "errMsg": "", "data": convert(faces)})
 }
 
 func convert(faces []db.UserFaces) map[string][]string {
-	var male []string
-	var female []string
+	var large []string
+	var small []string
 	var f = make(map[string][]string)
 	for _, v := range faces {
-		if v.Gender == db.Male {
-			male = append(male, v.FaceURL)
-		} else if v.Gender == db.Female {
-			female = append(female, v.FaceURL)
+		if v.FaceType == db.Large {
+			large = append(large, v.FaceURL)
+		} else if v.FaceType == db.Small {
+			small = append(small, v.FaceURL)
 		}
 	}
-	f["male"] = male
-	f["female"] = female
+	f["large"] = large
+	f["small"] = small
 	return f
 }
