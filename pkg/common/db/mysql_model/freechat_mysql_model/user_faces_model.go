@@ -11,5 +11,5 @@ func GetFacesURL() ([]db.UserFaces, error) {
 		return nil, err
 	}
 	var r []db.UserFaces
-	return r, dbConn.Table("user_faces").Find(&r).Error
+	return r, dbConn.Table("user_faces").Select("id,face_url").Find(&r).Error
 }

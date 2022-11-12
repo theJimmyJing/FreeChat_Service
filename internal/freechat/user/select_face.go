@@ -4,9 +4,16 @@ import (
 	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/db"
 	fc_mysql_model "Open_IM/pkg/common/db/mysql_model/freechat_mysql_model"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
+
+type FaceURL struct {
+	ID    int    `json:"id"`
+	Large string `json:"large"`
+	Small string `json:"small"`
+}
 
 func SelectFace(c *gin.Context) {
 	faces, err := fc_mysql_model.GetFacesURL()
@@ -17,18 +24,16 @@ func SelectFace(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"errCode": constant.NoError, "errMsg": "", "data": convert(faces)})
 }
 
-func convert(faces []db.UserFaces) map[string][]string {
-	var large []string
-	var small []string
-	var f = make(map[string][]string)
+func convert(faces []db.UserFaces) []FaceURL {
+	var f = []FaceURL{}
 	for _, v := range faces {
-		if v.FaceType == db.Large {
-			large = append(large, v.FaceURL)
-		} else if v.FaceType == db.Small {
-			small = append(small, v.FaceURL)
+		var u = FaceURL{}
+		err := json.Unmarshal([]byte(v.FaceURL), &u)
+		if err != nil {
+			return f
 		}
+		u.ID = v.ID
+		f = append(f, u)
 	}
-	f["large"] = large
-	f["small"] = small
 	return f
 }
