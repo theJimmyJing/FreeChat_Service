@@ -16,8 +16,6 @@ import (
 )
 
 type ParamsLogin struct {
-	// 加一个userID donedone
-	// 加一个验证码 donedone
 	VerificationCode string `json:"verificationCode" binding:"required"`
 	UserID           string `json:"userID" binding:"required"`
 	OperationID      string `json:"operationID" binding:"required"`
@@ -34,7 +32,6 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"errCode": constant.FormattingError, "errMsg": err.Error()})
 		return
 	}
-	// 判断邮箱是否存在 donedone
 	eml, err := im_mysql_model.GetEmail(params.UserID)
 	if err != nil || eml.Email == "" {
 		c.JSON(http.StatusOK, gin.H{"errCode": constant.NotRegistered, "errMsg": "The Email has not been registered"})
@@ -42,7 +39,6 @@ func Login(c *gin.Context) {
 	}
 
 	account := eml.Email
-	// 登录需要验证邮箱 donedone
 	if params.VerificationCode != config.Config.Demo.SuperCode {
 		accountKey := account + "_" + constant.VerificationCodeForLoginSuffix
 		v, err := db.DB.GetAccountCode(accountKey)

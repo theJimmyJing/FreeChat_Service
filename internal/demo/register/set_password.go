@@ -30,7 +30,7 @@ type ParamsRegister struct {
 	AreaCode         string `json:"areaCode"`
 }
 
-// Register 注册账号
+// Register register in uses and registers table
 func Register(c *gin.Context) {
 	params := ParamsRegister{}
 	if err := c.BindJSON(&params); err != nil {
@@ -43,10 +43,7 @@ func Register(c *gin.Context) {
 		rd := 100000 + rand.Intn(900000)
 		params.Nickname = "freechat" + string(rd)
 	}
-	// 目前只支持邮箱验证 donedonee
 	account := params.Email
-	// 注册需要验证邮箱 donedone
-	// 修改验证码存储的key donedone
 	if params.VerificationCode != config.Config.Demo.SuperCode {
 		accountKey := account + "_" + constant.VerificationCodeForRegisterSuffix
 		v, err := db.DB.GetAccountCode(accountKey)
@@ -75,24 +72,25 @@ func Register(c *gin.Context) {
 	bMsg, err := http2.Post(url, openIMRegisterReq, 2)
 	if err != nil {
 		log.NewError(params.OperationID, "request openIM register error", account, "err", err.Error())
-		c.JSON(http.StatusOK, gin.H{"errCode": constant.RegisterFailed, "errMsg": err.Error()})
+		c.JSON(http.StatusOK, gin.H{"errCode": constant.RegisterFailed, "errMsg": "register failed"})
 		return
 	}
 	err = json.Unmarshal(bMsg, &openIMRegisterResp)
 	if err != nil || openIMRegisterResp.ErrCode != 0 {
-		log.NewError(params.OperationID, "request openIM register error", account, "err", "resp: ", openIMRegisterResp.ErrCode)
+		log.NewError(params.OperationID, "request openIM register error", account, "err", "resp: ",
+			openIMRegisterResp.ErrCode, openIMRegisterResp.ErrMsg)
 		if err != nil {
 			log.NewError(params.OperationID, utils.GetSelfFuncName(), err.Error())
 		}
-		c.JSON(http.StatusOK, gin.H{"errCode": constant.RegisterFailed, "errMsg": "register failed: " + openIMRegisterResp.ErrMsg})
+		c.JSON(http.StatusOK, gin.H{"errCode": constant.RegisterFailed, "errMsg": "register failed"})
 		return
 	}
 	log.Info(params.OperationID, "begin store mysql", account, params.Password, "info", params.FaceURL, params.Nickname)
-	// 写register表的时候，无需密码 donedone
+
 	err = im_mysql_model.InsertRegister(account, params.Password, params.Ex, userID, params.AreaCode)
 	if err != nil {
 		log.NewError(params.OperationID, "set phone number password error", account, "err", err.Error())
-		c.JSON(http.StatusOK, gin.H{"errCode": constant.RegisterFailed, "errMsg": err.Error()})
+		c.JSON(http.StatusOK, gin.H{"errCode": constant.RegisterFailed, "errMsg": "register failed"})
 		return
 	}
 	log.Info(params.OperationID, "end InsertRegister", account, userID)

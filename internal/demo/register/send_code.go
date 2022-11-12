@@ -34,7 +34,6 @@ func init() {
 }
 
 type paramsVerificationCode struct {
-	// 加一个userID donedone
 	UserID      string `json:"userID" binding:"required"`
 	Email       string `json:"email"`
 	OperationID string `json:"operationID" binding:"required"`
@@ -59,7 +58,6 @@ func SendVerificationCode(c *gin.Context) {
 	if params.Email != "" && params.UsedFor == constant.VerificationCodeForRegister {
 		account = params.Email
 	} else {
-		// 发验证码的时候前端传给后端userId，后端自己去查邮箱然后发 donedone
 		r, err := im_mysql_model.GetEmail(params.UserID)
 		if err != nil || r.Email == "" {
 			c.JSON(http.StatusOK, gin.H{"errCode": constant.NotRegistered, "errMsg": err.Error()})
@@ -71,7 +69,6 @@ func SendVerificationCode(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"errCode": constant.MailSendCodeErr, "errMsg": "The email is empty"})
 		return
 	}
-	// 修改验证码存储的key  donedone
 	var accountKey = account
 	switch params.UsedFor {
 	case constant.VerificationCodeForRegister:
