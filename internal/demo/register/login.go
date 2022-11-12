@@ -20,11 +20,11 @@ type ParamsLogin struct {
 	// 加一个验证码 donedone
 	VerificationCode string `json:"verificationCode" binding:"required"`
 	UserID           string `json:"userID" binding:"required"`
+	OperationID      string `json:"operationID" binding:"required"`
 	Email            string `json:"email"`
 	PhoneNumber      string `json:"phoneNumber"`
 	Password         string `json:"password"`
 	Platform         int32  `json:"platform"`
-	OperationID      string `json:"operationID" binding:"required"`
 	AreaCode         string `json:"areaCode"`
 }
 
@@ -35,20 +35,19 @@ func Login(c *gin.Context) {
 		return
 	}
 	// 判断邮箱是否存在 donedone
-	// TODO 调试的时候看下uid不存在是报err还是咋地
 	eml, err := im_mysql_model.GetEmail(params.UserID)
 	if err != nil || eml.Email == "" {
 		c.JSON(http.StatusOK, gin.H{"errCode": constant.NotRegistered, "errMsg": "The Email has not been registered"})
 		return
 	}
 
-	account := params.Email
+	account := eml.Email
 	// 登录需要验证邮箱 donedone
 	if params.VerificationCode != config.Config.Demo.SuperCode {
 		accountKey := account + "_" + constant.VerificationCodeForLoginSuffix
 		v, err := db.DB.GetAccountCode(accountKey)
 		if err != nil || v != params.VerificationCode {
-			log.NewError(params.OperationID, "password Verification code error", account, params.VerificationCode)
+			log.NewError(params.OperationID, "Verification code error", account, params.VerificationCode)
 			c.JSON(http.StatusOK, gin.H{"errCode": constant.CodeInvalidOrExpired, "errMsg": "Verification code error!"})
 			return
 		}
@@ -59,11 +58,11 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"errCode": constant.NotRegistered, "errMsg": "Mobile phone number is not registered"})
 		return
 	}
-	if r.Password != params.Password {
+	/*if r.Password != params.Password {
 		log.NewError(params.OperationID, "password  err", params.Password, account, r.Password, r.Account)
 		c.JSON(http.StatusOK, gin.H{"errCode": constant.PasswordErr, "errMsg": "password err"})
 		return
-	}
+	}*/
 	var userID string
 	if r.UserID != "" {
 		userID = r.UserID

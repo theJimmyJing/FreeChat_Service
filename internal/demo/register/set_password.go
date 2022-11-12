@@ -17,7 +17,7 @@ import (
 )
 
 type ParamsRegister struct {
-	UserID           string `gorm:"column:user_id;primary_key;size:64" binding:"required"`
+	UserID           string `gorm:"column:userID;primary_key;size:64" json:"userID" binding:"required"`
 	Email            string `json:"email" binding:"required"`
 	VerificationCode string `json:"verificationCode" binding:"required"`
 	Nickname         string `json:"nickname"`
@@ -67,6 +67,7 @@ func Register(c *gin.Context) {
 	openIMRegisterReq.OperationID = params.OperationID
 	openIMRegisterReq.Platform = params.Platform
 	openIMRegisterReq.UserID = userID
+	openIMRegisterReq.Email = params.Email
 	openIMRegisterReq.Nickname = params.Nickname
 	openIMRegisterReq.Secret = config.Config.Secret
 	openIMRegisterReq.FaceURL = params.FaceURL
