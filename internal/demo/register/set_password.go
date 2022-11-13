@@ -18,7 +18,7 @@ import (
 )
 
 type ParamsRegister struct {
-	UserID           string `gorm:"column:userID;primary_key;size:64" json:"userID" binding:"required"`
+	UserID           string `gorm:"column:userID;primary_key;size:64" json:"userID" binding:"required" validate:"eth_addr|btc_addr|btc_addr_bech32"`
 	Email            string `json:"email" binding:"required,email"`
 	VerificationCode string `json:"verificationCode" binding:"required"`
 	Nickname         string `json:"nickname"`
@@ -55,10 +55,6 @@ func Register(c *gin.Context) {
 		}
 	}
 
-	//userID := utils.Md5(params.OperationID + strconv.FormatInt(time.Now().UnixNano(), 10))
-	//bi := big.NewInt(0)
-	//bi.SetString(userID[0:8], 16)
-	//userID = bi.String()
 	userID := params.UserID
 	url := config.Config.Demo.ImAPIURL + "/auth/user_register"
 	openIMRegisterReq := api.UserRegisterReq{}
