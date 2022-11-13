@@ -18,7 +18,7 @@ import (
 )
 
 type ParamsRegister struct {
-	UserID           string `gorm:"column:userID;primary_key;size:64" json:"userID" binding:"required" validate:"eth_addr|btc_addr|btc_addr_bech32"`
+	UserID           string `gorm:"column:userID;primary_key;size:64" json:"userID" binding:"required,eth_addr|btc_addr|btc_addr_bech32"`
 	Email            string `json:"email" binding:"required,email"`
 	VerificationCode string `json:"verificationCode" binding:"required"`
 	Nickname         string `json:"nickname"`

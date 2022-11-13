@@ -17,7 +17,7 @@ import (
 
 type ParamsLogin struct {
 	VerificationCode string `json:"verificationCode" binding:"required"`
-	UserID           string `json:"userID" binding:"required"`
+	UserID           string `json:"userID" binding:"required,eth_addr|btc_addr|btc_addr_bech32"`
 	OperationID      string `json:"operationID" binding:"required"`
 	Email            string `json:"email"`
 	PhoneNumber      string `json:"phoneNumber"`

@@ -34,7 +34,7 @@ func init() {
 }
 
 type paramsVerificationCode struct {
-	UserID      string `json:"userID" binding:"required"`
+	UserID      string `json:"userID" binding:"required,eth_addr|btc_addr|btc_addr_bech32"`
 	Email       string `json:"email"`
 	OperationID string `json:"operationID" binding:"required"`
 	UsedFor     int    `json:"usedFor"`
