@@ -8,7 +8,7 @@ import (
 
 type ApiUserInfo struct {
 	UserID      string `json:"userID" binding:"required,min=1,max=64" swaggo:"true,用户ID,"`
-	Email       string `json:"email" binding:"required,max=64"`
+	Email       string `json:"email" binding:"required,email"`
 	Password    string `json:"password" binding:"omitempty,min=1,max=64" swaggo:"true,password,"`
 	Nickname    string `json:"nickname" binding:"omitempty,min=1,max=64" swaggo:"true,my id,19"`
 	FaceURL     string `json:"faceURL" binding:"omitempty,max=1024"`

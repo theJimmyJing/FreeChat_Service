@@ -13,12 +13,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 type ParamsRegister struct {
 	UserID           string `gorm:"column:userID;primary_key;size:64" json:"userID" binding:"required"`
-	Email            string `json:"email" binding:"required"`
+	Email            string `json:"email" binding:"required,email"`
 	VerificationCode string `json:"verificationCode" binding:"required"`
 	Nickname         string `json:"nickname"`
 	PhoneNumber      string `json:"phoneNumber"`
@@ -41,7 +42,7 @@ func Register(c *gin.Context) {
 	if params.Nickname == "" {
 		rand.Seed(time.Now().UnixNano())
 		rd := 100000 + rand.Intn(900000)
-		params.Nickname = "freechat" + string(rd)
+		params.Nickname = "freechat" + strconv.Itoa(rd)
 	}
 	account := params.Email
 	if params.VerificationCode != config.Config.Demo.SuperCode {
