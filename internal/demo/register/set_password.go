@@ -49,7 +49,7 @@ func Register(c *gin.Context) {
 		accountKey := account + "_" + constant.VerificationCodeForRegisterSuffix
 		v, err := db.DB.GetAccountCode(accountKey)
 		if err != nil || v != params.VerificationCode {
-			log.NewError(params.OperationID, "password Verification code error", account, params.VerificationCode)
+			log.NewError(params.OperationID, "Verification code error", account, params.VerificationCode)
 			c.JSON(http.StatusOK, gin.H{"errCode": constant.CodeInvalidOrExpired, "errMsg": "Verification code error!"})
 			return
 		}
