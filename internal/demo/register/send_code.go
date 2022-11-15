@@ -74,7 +74,7 @@ func SendVerificationCode(c *gin.Context) {
 	case constant.VerificationCodeForRegister:
 		_, err := im_mysql_model.GetRegister(account, "")
 		if err == nil {
-			log.NewError(params.OperationID, "The email has been registered", params)
+			log.NewError(params.OperationID, "The account has been registered", params)
 			c.JSON(http.StatusOK, gin.H{"errCode": constant.HasRegistered, "errMsg": "The email has been registered"})
 			return
 		}
@@ -117,8 +117,8 @@ func SendVerificationCode(c *gin.Context) {
 	m := gomail.NewMessage()
 	m.SetHeader(`From`, config.Config.Demo.Mail.SenderMail)
 	m.SetHeader(`To`, []string{account}...)
-	m.SetHeader(`Subject`, config.Config.Demo.Mail.Title)
-	m.SetBody(`text/html`, fmt.Sprintf("%d", code))
+	m.SetHeader(`Subject`, fmt.Sprintf("%s %d", config.Config.Demo.Mail.Title, code))
+	m.SetBody(`text/html`, fmt.Sprintf("%s %d", config.Config.Demo.Mail.Content, code))
 	if err := gomail.NewDialer(config.Config.Demo.Mail.SmtpAddr, config.Config.Demo.Mail.SmtpPort, config.Config.Demo.Mail.SenderMail, config.Config.Demo.Mail.SenderAuthorizationCode).DialAndSend(m); err != nil {
 		log.Error(params.OperationID, "send mail error", account, err.Error())
 		c.JSON(http.StatusOK, gin.H{"errCode": constant.MailSendCodeErr, "errMsg": ""})

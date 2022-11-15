@@ -26,6 +26,7 @@ func init() {
 			appMgr.Nickname = config.Config.Manager.AppSysNotificationName
 		} else {
 			appMgr.Nickname = "AppManager" + utils.IntToString(k+1)
+			appMgr.Email = "AppManager" + utils.IntToString(k+1) + "@freechat.world"
 		}
 		appMgr.AppMangerLevel = constant.AppAdmin
 		err = UserRegister(appMgr)

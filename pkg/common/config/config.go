@@ -468,6 +468,7 @@ type config struct {
 		CodeTTL   int    `yaml:"codeTTL"`
 		Mail      struct {
 			Title                   string `yaml:"title"`
+			Content                 string `yaml:"content"`
 			SenderMail              string `yaml:"senderMail"`
 			SenderAuthorizationCode string `yaml:"senderAuthorizationCode"`
 			SmtpAddr                string `yaml:"smtpAddr"`
