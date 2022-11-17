@@ -708,9 +708,9 @@ demo:
   codeTTL: 60
   mail: #仅支持qq邮箱，具体操作参考 https://service.mail.qq.com/cgi-bin/help?subtype=1&id=28&no=1001256 必须修改
     title: "openIM"
-    senderMail: "765567899@qq.com"
-    senderAuthorizationCode: "gxyausfoevlzbfag"
-    smtpAddr: "smtp.qq.com"
+    senderMail: "AKIAR57G45STMHLQ4ATW@amazonaws.com"
+    senderAuthorizationCode: "BNyHxKD6cKATzhR1hYiep6s+08gGaMo5cNOgLSbtk4d9"
+    smtpAddr: "email-smtp.ap-southeast-1.amazonaws.com"
     smtpPort: 25   #需开放此端口 出口方向
   testDepartMentID: 001
   imAPIURL: http://127.0.0.1:10002
