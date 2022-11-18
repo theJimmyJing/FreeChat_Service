@@ -705,13 +705,18 @@ demo:
     enable: true
   superCode: 666666 #超级验证码，建议修改掉，收不到短信验证码时可以用此替代
   #  second
-  codeTTL: 60
+  codeTTL: 600
   mail: #仅支持qq邮箱，具体操作参考 https://service.mail.qq.com/cgi-bin/help?subtype=1&id=28&no=1001256 必须修改
-    title: "openIM"
-    senderMail: "AKIAR57G45STMHLQ4ATW@amazonaws.com"
-    senderAuthorizationCode: "BNyHxKD6cKATzhR1hYiep6s+08gGaMo5cNOgLSbtk4d9"
-    smtpAddr: "email-smtp.ap-southeast-1.amazonaws.com"
-    smtpPort: 25   #需开放此端口 出口方向
+    title: "Your Freechat confirmation code is"
+    content: "<H3 style=\"display:block;margin bottom:15px;\">We noticed an attempt to operate your account that seems suspicious. Was this you?</h3>
+  <text style=\"display:block;\">if this was you </text>
+  <text style=\"display:block;\">Just to be safe, you'll nead to confirm this is really you by entering the following </text>
+  <text style=\"display:block;\">single-use code. </text>
+  <H2 style=\"display:block;margin bottom:15px;\">"
+    senderMail: "xxxxxx@xxx.xxx"
+    senderAuthorizationCode: "xxxxx"
+    smtpAddr: "smtp.mxhichina.com"
+    smtpPort: 465   #需开放此端口 出口方向
   testDepartMentID: 001
   imAPIURL: http://127.0.0.1:10002
 
