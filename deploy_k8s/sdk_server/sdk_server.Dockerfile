@@ -1,7 +1,7 @@
 FROM ubuntu
 
 # 设置固定的项目路径
-ENV WORKDIR /Open-IM-Server
+ENV WORKDIR /FreeChat_Service
 ENV CMDDIR $WORKDIR/cmd
 ENV CONFIG_NAME $WORKDIR/config/config.yaml
 
@@ -12,7 +12,7 @@ ADD ./open_im_sdk_server $WORKDIR/main
 RUN mkdir $WORKDIR/logs $WORKDIR/config $WORKDIR/db && \
   chmod +x $WORKDIR/main
 
-VOLUME ["/Open-IM-Server/logs","/Open-IM-Server/config","/Open-IM-Server/script","/Open-IM-Server/db/sdk"]
+VOLUME ["/FreeChat_Service/logs","/FreeChat_Service/config","/FreeChat_Service/script","/FreeChat_Service/db/sdk"]
 
 WORKDIR $CMDDIR
 CMD ./main
