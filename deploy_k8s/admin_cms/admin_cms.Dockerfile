@@ -3,7 +3,7 @@ FROM ubuntu
 # 设置固定的项目路径
 ENV WORKDIR /FreeChat_Service
 ENV CMDDIR $WORKDIR/cmd
-ENV CONFIG_NAME $WORKDIR/cmd/main/config.yaml
+ENV CONFIG_NAME ./config.yaml
 
 
 # 将可执行文件复制到目标目录

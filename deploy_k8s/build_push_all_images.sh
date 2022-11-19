@@ -18,6 +18,7 @@ for i in ${service[*]}
 do
 	echo "start to build images" $i
 	cd $i
+	docker rmi "openim/${i}:$oldVersion"
 	image="openim/${i}:$version"
 	docker build -t $image . -f ./${i}.Dockerfile
 	echo "build ${dockerfile} success"
