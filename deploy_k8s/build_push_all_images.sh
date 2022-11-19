@@ -22,10 +22,10 @@ do
 	image="openim/${i}:$version"
 	docker build -t $image . -f ./${i}.Dockerfile
 	echo "build ${dockerfile} success"
-	rm -rf ./config.yaml
 	echo "clean temp success"
 	docker push $image
 	echo "push ${image} success "
+	rm -rf ./config.yaml
 	cd ..
 done
 
