@@ -1,14 +1,13 @@
 #/bin/sh
 source ./path_info.cfg
 
-# images version
-version=v2.1.0
 git pull
 cd ../script/; ./build_all_service.sh
 cd ../deploy_k8s/
 
 for i in  ${service[*]}
 do
+  cp ../config/config.yaml ./${i}/
   mv ../bin/open_im_${i} ./${i}/
 done
 
