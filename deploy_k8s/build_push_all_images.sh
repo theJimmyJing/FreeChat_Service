@@ -14,7 +14,6 @@ done
 echo "move success"
 
 echo "start to build images"
-
 for i in ${service[*]}
 do
 	echo "start to build images" $i
@@ -26,4 +25,12 @@ do
 	echo "push ${image} success "
 	cd ..
 done
+echo "build success"
+
+for i in  ${service[*]}
+do
+  rm -rf ./config.yaml
+done
+echo "clean temp success"
+
 
