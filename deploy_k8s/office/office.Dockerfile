@@ -8,7 +8,7 @@ ENV CONFIG_NAME $WORKDIR/cmd/main/config.yaml
 
 # 将可执行文件复制到目标目录
 ADD ./open_im_office $WORKDIR/cmd/main
-ADD ../config/config.yaml $WORKDIR/cmd/main
+ADD ./config.yaml $WORKDIR/cmd/main
 
 # 创建用于挂载的几个目录，添加可执行权限
 RUN mkdir $WORKDIR/logs $WORKDIR/config $WORKDIR/script && \
