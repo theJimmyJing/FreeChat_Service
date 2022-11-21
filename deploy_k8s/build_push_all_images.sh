@@ -20,8 +20,9 @@ for i in ${service[*]}
 do
 	echo "start to build images" $i
 	cd $i
-	docker rmi "${ECR}/${i}:$oldVersion"
-	image="${ECR}/${i}:$version"
+	docker rmi "${ECR}/openim_${i}:$oldVersion"
+	aws ecr create-repository --repository-name "openim_${i}"
+	image="${ECR}/openim_${i}:$version"
 	docker build -t $image . -f ./${i}.Dockerfile
 	echo "build ${dockerfile} success"
 	echo "clean temp success"
