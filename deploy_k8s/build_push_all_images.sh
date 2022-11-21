@@ -20,14 +20,18 @@ for i in ${service[*]}
 do
 	echo "start to build images" $i
 	cd $i
+	docker rmi "openim_${i}:$oldVersion"
 	docker rmi "${ECR}/openim_${i}:$oldVersion"
-	aws ecr create-repository --repository-name "openim_${i}"
-	image="${ECR}/openim_${i}:$version"
+
+	image="openim_${i}:$version"
 	docker build -t $image . -f ./${i}.Dockerfile
-	echo "build ${dockerfile} success"
-	echo "clean temp success"
-	docker push $image
-	echo "push ${image} success "
+
+	tag="${ECR}/openim_${i}:$version"
+	aws ecr create-repository --repository-name "openim_${i}"
+	docker tag ${image} ${tag}
+	docker push ${tag}
+	echo "push ${tag} success "
+
 	rm -rf ./config.yaml
 	cd ..
 done
