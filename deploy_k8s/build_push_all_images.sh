@@ -13,13 +13,15 @@ done
 
 echo "move success"
 
+aws ecr get-login-password | docker login --username AWS --password-stdin ${ECR}
+
 echo "start to build images"
 for i in ${service[*]}
 do
 	echo "start to build images" $i
 	cd $i
-	docker rmi "openim/${i}:$oldVersion"
-	image="openim/${i}:$version"
+	docker rmi "${ECR}/${i}:$oldVersion"
+	image="${ECR}/${i}:$version"
 	docker build -t $image . -f ./${i}.Dockerfile
 	echo "build ${dockerfile} success"
 	echo "clean temp success"
