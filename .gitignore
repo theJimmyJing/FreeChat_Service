@@ -8,15 +8,15 @@ out-test
 .idea
 
 
-deploy/open_im_demo
-deploy/open_im_api
-deploy/open_im_msg_gateway
-deploy/open_im_msg_transfer
-deploy/open_im_push
-deploy/open_im_timer_task
-deploy/open_im_rpc_user
-deploy/open_im_rpc_friend
-deploy/open_im_rpc_group
-deploy/open_im_rpc_msg
-deploy/open_im_rpc_auth
-deploy/Open-IM-SDK-Core
+freechat_docker/open_im_demo
+freechat_docker/open_im_api
+freechat_docker/open_im_msg_gateway
+freechat_docker/open_im_msg_transfer
+freechat_docker/open_im_push
+freechat_docker/open_im_timer_task
+freechat_docker/open_im_rpc_user
+freechat_docker/open_im_rpc_friend
+freechat_docker/open_im_rpc_group
+freechat_docker/open_im_rpc_msg
+freechat_docker/open_im_rpc_auth
+freechat_docker/Open-IM-SDK-Core
