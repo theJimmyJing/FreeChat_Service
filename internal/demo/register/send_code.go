@@ -70,7 +70,7 @@ func SendVerificationCode(c *gin.Context) {
 		return
 	}
 	var accountKey = account
-	var accountKeyMinute = accountKey + "minute"
+	var accountKeyMinute = accountKey + "_minute"
 	switch params.UsedFor {
 	case constant.VerificationCodeForRegister:
 		_, err := im_mysql_model.GetRegister(account, "")
