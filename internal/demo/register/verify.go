@@ -59,6 +59,8 @@ func Verify(c *gin.Context) {
 		accountKey = account + "_" + constant.VerificationCodeForRegisterSuffix
 	case constant.VerificationCodeForReset:
 		accountKey = account + "_" + constant.VerificationCodeForResetSuffix
+	case constant.VerificationCodeForLogin:
+		accountKey = account + "_" + constant.VerificationCodeForLoginSuffix
 	}
 
 	code, err := db.DB.GetAccountCode(accountKey)
