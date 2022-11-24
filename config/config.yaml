@@ -714,10 +714,10 @@ demo:
   <text style=\"display:block;\">Just to be safe, you'll nead to confirm this is really you by entering the following </text>
   <text style=\"display:block;\">single-use code. </text>
   <H2 style=\"display:block;margin bottom:15px;\">"
-    senderMail: "xxxxxx@xxx.xxx"
-    senderAuthorizationCode: "xxxxx"
-    smtpAddr: "smtp.mxhichina.com"
-    smtpPort: 465   #需开放此端口 出口方向
+    senderMail: "765567899@qq.com"
+    senderAuthorizationCode: "gxyausfoevlzbfag"
+    smtpAddr: "smtp.qq.com"
+    smtpPort: 25   #需开放此端口 出口方向
   testDepartMentID: 001
   imAPIURL: http://127.0.0.1:10002
 
