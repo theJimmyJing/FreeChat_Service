@@ -3,11 +3,12 @@ package main
 import (
 	_ "Open_IM/cmd/open_im_api/docs"
 	apiAuth "Open_IM/internal/api/auth"
-	apiChat "Open_IM/internal/api/chat"
+	clientInit "Open_IM/internal/api/client_init"
 	"Open_IM/internal/api/conversation"
 	"Open_IM/internal/api/friend"
 	"Open_IM/internal/api/group"
 	"Open_IM/internal/api/manage"
+	apiChat "Open_IM/internal/api/msg"
 	"Open_IM/internal/api/office"
 	"Open_IM/internal/api/organization"
 	apiThird "Open_IM/internal/api/third"
@@ -17,16 +18,19 @@ import (
 	"Open_IM/pkg/utils"
 	"flag"
 	"fmt"
+
 	//_ "github.com/razeencheng/demo-go/swaggo-gin/docs"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 	"io"
 	"os"
 	"strconv"
 
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
 	"github.com/gin-gonic/gin"
 	//"syscall"
 	"Open_IM/pkg/common/constant"
+	promePkg "Open_IM/pkg/common/prometheus"
 )
 
 // @title open-IM-Server API
@@ -41,18 +45,25 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	f, _ := os.Create("../logs/api.log")
 	gin.DefaultWriter = io.MultiWriter(f)
-	gin.SetMode(gin.DebugMode)
-	r := gin.Default()
+	//	gin.SetMode(gin.DebugMode)
+	r := gin.New()
+	r.Use(gin.Recovery())
 	r.Use(utils.CorsHandler())
-
-	log.Info("load  config: ", config.Config)
+	log.Info("load config: ", config.Config)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	if config.Config.Prometheus.Enable {
+		promePkg.NewApiRequestCounter()
+		promePkg.NewApiRequestFailedCounter()
+		promePkg.NewApiRequestSuccessCounter()
+		r.Use(promePkg.PromeTheusMiddleware)
+		r.GET("/metrics", promePkg.PrometheusHandler())
+	}
 	// user routing group, which handles user registration and login services
 	userRouterGroup := r.Group("/user")
 	{
 		userRouterGroup.POST("/update_user_info", user.UpdateUserInfo) //1
 		userRouterGroup.POST("/set_global_msg_recv_opt", user.SetGlobalRecvMessageOpt)
-		userRouterGroup.POST("/get_users_info", user.GetUsersInfo)                  //1
+		userRouterGroup.POST("/get_users_info", user.GetUsersPublicInfo)            //1
 		userRouterGroup.POST("/get_self_user_info", user.GetSelfUserInfo)           //1
 		userRouterGroup.POST("/get_users_online_status", user.GetUsersOnlineStatus) //1
 		userRouterGroup.POST("/get_users_info_from_cache", user.GetUsersInfoFromCache)
@@ -61,6 +72,7 @@ func main() {
 		userRouterGroup.POST("/get_all_users_uid", manage.GetAllUsersUid) //1
 		userRouterGroup.POST("/account_check", manage.AccountCheck)       //1
 		//	userRouterGroup.POST("/get_users_online_status", manage.GetUsersOnlineStatus) //1
+		userRouterGroup.POST("/get_users", user.GetUsers)
 	}
 	//friend routing group
 	friendRouterGroup := r.Group("/friend")
@@ -92,9 +104,9 @@ func main() {
 		groupRouterGroup.POST("/transfer_group", group.TransferGroupOwner)                          //1
 		groupRouterGroup.POST("/get_recv_group_applicationList", group.GetRecvGroupApplicationList) //1
 		groupRouterGroup.POST("/get_user_req_group_applicationList", group.GetUserReqGroupApplicationList)
-		groupRouterGroup.POST("/get_groups_info", group.GetGroupsInfo)                   //1
-		groupRouterGroup.POST("/kick_group", group.KickGroupMember)                      //1
-		groupRouterGroup.POST("/get_group_member_list", group.GetGroupMemberList)        //no use
+		groupRouterGroup.POST("/get_groups_info", group.GetGroupsInfo) //1
+		groupRouterGroup.POST("/kick_group", group.KickGroupMember)    //1
+		//	groupRouterGroup.POST("/get_group_member_list", group.GetGroupMemberList)        //no use
 		groupRouterGroup.POST("/get_group_all_member_list", group.GetGroupAllMemberList) //1
 		groupRouterGroup.POST("/get_group_members_info", group.GetGroupMembersInfo)      //1
 		groupRouterGroup.POST("/invite_user_to_group", group.InviteUserToGroup)          //1
@@ -106,6 +118,8 @@ func main() {
 		groupRouterGroup.POST("/cancel_mute_group", group.CancelMuteGroup)
 		groupRouterGroup.POST("/set_group_member_nickname", group.SetGroupMemberNickname)
 		groupRouterGroup.POST("/set_group_member_info", group.SetGroupMemberInfo)
+		groupRouterGroup.POST("/get_group_abstract_info", group.GetGroupAbstractInfo)
+		//groupRouterGroup.POST("/get_group_all_member_list_by_split", group.GetGroupAllMemberListBySplit)
 	}
 	superGroupRouterGroup := r.Group("/super_group")
 	{
@@ -131,6 +145,9 @@ func main() {
 		thirdGroup.POST("/get_download_url", apiThird.GetDownloadURL)
 		thirdGroup.POST("/get_rtc_invitation_info", apiThird.GetRTCInvitationInfo)
 		thirdGroup.POST("/get_rtc_invitation_start_app", apiThird.GetRTCInvitationInfoStartApp)
+		thirdGroup.POST("/fcm_update_token", apiThird.FcmUpdateToken)
+		thirdGroup.POST("/aws_storage_credential", apiThird.AwsStorageCredential)
+		thirdGroup.POST("/set_app_badge", apiThird.SetAppBadge)
 	}
 	//Message
 	chatGroup := r.Group("/msg")
@@ -139,14 +156,12 @@ func main() {
 		chatGroup.POST("/send_msg", apiChat.SendMsg)
 		chatGroup.POST("/pull_msg_by_seq", apiChat.PullMsgBySeqList)
 		chatGroup.POST("/del_msg", apiChat.DelMsg)
+		chatGroup.POST("/del_super_group_msg", apiChat.DelSuperGroupMsg)
 		chatGroup.POST("/clear_msg", apiChat.ClearMsg)
 		chatGroup.POST("/manage_send_msg", manage.ManagementSendMsg)
 		chatGroup.POST("/batch_send_msg", manage.ManagementBatchSendMsg)
-	}
-	//Manager
-	managementGroup := r.Group("/manager")
-	{
-		managementGroup.POST("/delete_user", manage.DeleteUser) //1
+		chatGroup.POST("/check_msg_is_send_success", manage.CheckMsgIsSendSuccess)
+		chatGroup.POST("/set_msg_min_seq", apiChat.SetMsgMinSeq)
 	}
 	//Conversation
 	conversationGroup := r.Group("/conversation")
@@ -202,6 +217,12 @@ func main() {
 
 	}
 
+	initGroup := r.Group("/init")
+	{
+		initGroup.POST("/set_client_config", clientInit.SetClientInitConfig)
+		initGroup.POST("/get_client_config", clientInit.GetClientInitConfig)
+	}
+
 	go apiThird.MinioInit()
 	defaultPorts := config.Config.Api.GinPort
 	ginPort := flag.Int("port", defaultPorts[0], "get ginServerPort from cmd,default 10002 as port")
@@ -210,10 +231,10 @@ func main() {
 	if config.Config.Api.ListenIP != "" {
 		address = config.Config.Api.ListenIP + ":" + strconv.Itoa(*ginPort)
 	}
-	address = config.Config.Api.ListenIP + ":" + strconv.Itoa(*ginPort)
-	fmt.Println("start api server, address: ", address)
+	fmt.Println("start api server, address: ", address, "OpenIM version: ", constant.CurrentVersion, "\n")
 	err := r.Run(address)
 	if err != nil {
-		log.Error("", "run failed ", *ginPort, err.Error())
+		log.Error("", "api run failed ", address, err.Error())
+		panic("api start failed " + err.Error())
 	}
 }

@@ -8,12 +8,12 @@ import (
 	"Open_IM/pkg/common/log"
 	"Open_IM/pkg/common/utils"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"gopkg.in/gomail.v2"
 	"math/rand"
 	"net/http"
-
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"gopkg.in/gomail.v2"
 )
 
 var sms SMS
@@ -34,10 +34,12 @@ func init() {
 }
 
 type paramsVerificationCode struct {
-	UserID      string `json:"userID" binding:"required,eth_addr|btc_addr|btc_addr_bech32"`
-	Email       string `json:"email"`
-	OperationID string `json:"operationID" binding:"required"`
-	UsedFor     int    `json:"usedFor"`
+	UserID         string `json:"userID" binding:"required,eth_addr|btc_addr|btc_addr_bech32"`
+	Email          string `json:"email" binding:"email"`
+	OperationID    string `json:"operationID" binding:"required"`
+	UsedFor        int    `json:"usedFor"`
+	AreaCode       string `json:"areaCode"`
+	InvitationCode string `json:"invitationCode"`
 }
 
 func SendVerificationCode(c *gin.Context) {
@@ -72,18 +74,27 @@ func SendVerificationCode(c *gin.Context) {
 	var accountKey = account
 	switch params.UsedFor {
 	case constant.VerificationCodeForRegister:
-		_, err := im_mysql_model.GetRegister(account, "")
+		_, err := im_mysql_model.GetRegister(account, "", params.UserID)
 		if err == nil {
 			log.NewError(params.OperationID, "The account has been registered", params)
 			c.JSON(http.StatusOK, gin.H{"errCode": constant.HasRegistered, "errMsg": "The email has been registered"})
 			return
-		}
-		accountKey = accountKey + "_" + constant.VerificationCodeForRegisterSuffix
-		ok, err := db.DB.JudgeAccountEXISTS(accountKey)
-		if ok || err != nil {
-			log.NewError(params.OperationID, "Repeat send code", params, accountKey)
-			c.JSON(http.StatusOK, gin.H{"errCode": constant.RepeatSendCode, "errMsg": "Repeat send code"})
-			return
+			//需要邀请码
+			if config.Config.Demo.NeedInvitationCode {
+				err = im_mysql_model.CheckInvitationCode(params.InvitationCode)
+				if err != nil {
+					log.NewError(params.OperationID, "邀请码错误", params)
+					c.JSON(http.StatusOK, gin.H{"errCode": constant.InvitationError, "errMsg": "邀请码错误"})
+					return
+				}
+			}
+			accountKey = accountKey + "_" + constant.VerificationCodeForRegisterSuffix
+			ok, err := db.DB.JudgeAccountEXISTS(accountKey)
+			if ok || err != nil {
+				log.NewError(params.OperationID, "Repeat send code", params, accountKey)
+				c.JSON(http.StatusOK, gin.H{"errCode": constant.RepeatSendCode, "errMsg": "Repeat send code"})
+				return
+			}
 		}
 	case constant.VerificationCodeForReset:
 		accountKey = accountKey + "_" + constant.VerificationCodeForResetSuffix

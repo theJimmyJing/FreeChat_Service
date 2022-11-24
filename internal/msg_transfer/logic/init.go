@@ -4,6 +4,7 @@ import (
 	"Open_IM/pkg/common/config"
 	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/kafka"
+	promePkg "Open_IM/pkg/common/prometheus"
 	"Open_IM/pkg/statistics"
 	"fmt"
 	"sync"
@@ -36,8 +37,11 @@ var (
 func Init() {
 	cmdCh = make(chan Cmd2Value, 10000)
 	w = new(sync.Mutex)
-	persistentCH.Init()
-	historyCH.Init(cmdCh)
+	if config.Config.Prometheus.Enable {
+		initPrometheus()
+	}
+	persistentCH.Init()   // ws2mschat save mysql
+	historyCH.Init(cmdCh) //
 	historyMongoCH.Init()
 	onlineTopicStatus = OnlineTopicVacancy
 	//offlineHistoryCH.Init(cmdCh)
@@ -46,7 +50,7 @@ func Init() {
 	producer = kafka.NewKafkaProducer(config.Config.Kafka.Ms2pschat.Addr, config.Config.Kafka.Ms2pschat.Topic)
 	producerToMongo = kafka.NewKafkaProducer(config.Config.Kafka.MsgToMongo.Addr, config.Config.Kafka.MsgToMongo.Topic)
 }
-func Run() {
+func Run(promethuesPort int) {
 	//register mysqlConsumerHandler to
 	if config.Config.ChatPersistenceMysql {
 		go persistentCH.persistentConsumerGroup.RegisterHandleAndConsumer(&persistentCH)
@@ -56,6 +60,12 @@ func Run() {
 	go historyCH.historyConsumerGroup.RegisterHandleAndConsumer(&historyCH)
 	go historyMongoCH.historyConsumerGroup.RegisterHandleAndConsumer(&historyMongoCH)
 	//go offlineHistoryCH.historyConsumerGroup.RegisterHandleAndConsumer(&offlineHistoryCH)
+	go func() {
+		err := promePkg.StartPromeSrv(promethuesPort)
+		if err != nil {
+			panic(err)
+		}
+	}()
 }
 func SetOnlineTopicStatus(status int) {
 	w.Lock()

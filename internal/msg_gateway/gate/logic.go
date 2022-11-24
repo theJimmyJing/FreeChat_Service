@@ -5,8 +5,9 @@ import (
 	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/db"
 	"Open_IM/pkg/common/log"
+	promePkg "Open_IM/pkg/common/prometheus"
 	"Open_IM/pkg/grpc-etcdv3/getcdv3"
-	pbChat "Open_IM/pkg/proto/chat"
+	pbChat "Open_IM/pkg/proto/msg"
 	pbRtc "Open_IM/pkg/proto/rtc"
 	sdk_ws "Open_IM/pkg/proto/sdk_ws"
 	"Open_IM/pkg/utils"
@@ -43,15 +44,21 @@ func (ws *WServer) msgParse(conn *UserConn, binaryMsg []byte) {
 	case constant.WSGetNewestSeq:
 		log.NewInfo(m.OperationID, "getSeqReq ", m.SendID, m.MsgIncr, m.ReqIdentifier)
 		ws.getSeqReq(conn, &m)
+		promePkg.PromeInc(promePkg.GetNewestSeqTotalCounter)
 	case constant.WSSendMsg:
 		log.NewInfo(m.OperationID, "sendMsgReq ", m.SendID, m.MsgIncr, m.ReqIdentifier)
 		ws.sendMsgReq(conn, &m)
+		promePkg.PromeInc(promePkg.MsgRecvTotalCounter)
 	case constant.WSSendSignalMsg:
 		log.NewInfo(m.OperationID, "sendSignalMsgReq ", m.SendID, m.MsgIncr, m.ReqIdentifier)
 		ws.sendSignalMsgReq(conn, &m)
 	case constant.WSPullMsgBySeqList:
 		log.NewInfo(m.OperationID, "pullMsgBySeqListReq ", m.SendID, m.MsgIncr, m.ReqIdentifier)
 		ws.pullMsgBySeqListReq(conn, &m)
+		promePkg.PromeInc(promePkg.PullMsgBySeqListTotalCounter)
+	case constant.WsLogoutMsg:
+		log.NewInfo(m.OperationID, "conn.Close()", m.SendID, m.MsgIncr, m.ReqIdentifier)
+	//	conn.Close()
 	default:
 		log.Error(m.OperationID, "ReqIdentifier failed ", m.SendID, m.MsgIncr, m.ReqIdentifier)
 	}
@@ -69,16 +76,16 @@ func (ws *WServer) getSeqReq(conn *UserConn, m *Req) {
 		rpcReq.UserID = m.SendID
 		rpcReq.OperationID = m.OperationID
 		log.Debug(m.OperationID, "Ws call success to getMaxAndMinSeq", m.SendID, m.ReqIdentifier, m.MsgIncr, data.(sdk_ws.GetMaxAndMinSeqReq).GroupIDList)
-		grpcConn := getcdv3.GetConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImOfflineMessageName, rpcReq.OperationID)
+		grpcConn := getcdv3.GetDefaultConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImMsgName, rpcReq.OperationID)
 		if grpcConn == nil {
-			errMsg := rpcReq.OperationID + "getcdv3.GetConn == nil"
+			errMsg := rpcReq.OperationID + "getcdv3.GetDefaultConn == nil"
 			nReply.ErrCode = 500
 			nReply.ErrMsg = errMsg
 			log.NewError(rpcReq.OperationID, errMsg)
 			ws.getSeqResp(conn, m, nReply)
 			return
 		}
-		msgClient := pbChat.NewChatClient(grpcConn)
+		msgClient := pbChat.NewMsgClient(grpcConn)
 		rpcReply, err := msgClient.GetMaxAndMinSeq(context.Background(), &rpcReq)
 		if err != nil {
 			nReply.ErrCode = 500
@@ -124,16 +131,16 @@ func (ws *WServer) pullMsgBySeqListReq(conn *UserConn, m *Req) {
 		rpcReq.OperationID = m.OperationID
 		rpcReq.GroupSeqList = data.(sdk_ws.PullMessageBySeqListReq).GroupSeqList
 		log.NewInfo(m.OperationID, "Ws call success to pullMsgBySeqListReq middle", m.SendID, m.ReqIdentifier, m.MsgIncr, data.(sdk_ws.PullMessageBySeqListReq).SeqList)
-		grpcConn := getcdv3.GetConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImOfflineMessageName, m.OperationID)
+		grpcConn := getcdv3.GetDefaultConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImMsgName, m.OperationID)
 		if grpcConn == nil {
-			errMsg := rpcReq.OperationID + "getcdv3.GetConn == nil"
+			errMsg := rpcReq.OperationID + "getcdv3.GetDefaultConn == nil"
 			nReply.ErrCode = 500
 			nReply.ErrMsg = errMsg
 			log.NewError(rpcReq.OperationID, errMsg)
 			ws.pullMsgBySeqListResp(conn, m, nReply)
 			return
 		}
-		msgClient := pbChat.NewChatClient(grpcConn)
+		msgClient := pbChat.NewMsgClient(grpcConn)
 		reply, err := msgClient.PullMessageBySeqList(context.Background(), &rpcReq)
 		if err != nil {
 			log.NewError(rpcReq.OperationID, "pullMsgBySeqListReq err", err.Error())
@@ -150,6 +157,7 @@ func (ws *WServer) pullMsgBySeqListReq(conn *UserConn, m *Req) {
 		ws.pullMsgBySeqListResp(conn, m, nReply)
 	}
 }
+
 func (ws *WServer) pullMsgBySeqListResp(conn *UserConn, m *Req, pb *sdk_ws.PullMessageBySeqListResp) {
 	log.NewInfo(m.OperationID, "pullMsgBySeqListResp come  here ", pb.String())
 	c, _ := proto.Marshal(pb)
@@ -163,10 +171,9 @@ func (ws *WServer) pullMsgBySeqListResp(conn *UserConn, m *Req, pb *sdk_ws.PullM
 	}
 	log.NewInfo(m.OperationID, "pullMsgBySeqListResp all data  is ", mReply.ReqIdentifier, mReply.MsgIncr, mReply.ErrCode, mReply.ErrMsg,
 		len(mReply.Data))
-
 	ws.sendMsg(conn, mReply)
-
 }
+
 func (ws *WServer) sendMsgReq(conn *UserConn, m *Req) {
 	sendMsgAllCountLock.Lock()
 	sendMsgAllCount++
@@ -183,16 +190,16 @@ func (ws *WServer) sendMsgReq(conn *UserConn, m *Req) {
 			MsgData:     &data,
 		}
 		log.NewInfo(m.OperationID, "Ws call success to sendMsgReq middle", m.ReqIdentifier, m.SendID, m.MsgIncr, data.String())
-		etcdConn := getcdv3.GetConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImOfflineMessageName, m.OperationID)
+		etcdConn := getcdv3.GetDefaultConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImMsgName, m.OperationID)
 		if etcdConn == nil {
-			errMsg := m.OperationID + "getcdv3.GetConn == nil"
+			errMsg := m.OperationID + "getcdv3.GetDefaultConn == nil"
 			nReply.ErrCode = 500
 			nReply.ErrMsg = errMsg
 			log.NewError(m.OperationID, errMsg)
 			ws.sendMsgResp(conn, m, nReply)
 			return
 		}
-		client := pbChat.NewChatClient(etcdConn)
+		client := pbChat.NewMsgClient(etcdConn)
 		reply, err := client.SendMsg(context.Background(), &pbData)
 		if err != nil {
 			log.NewError(pbData.OperationID, "UserSendMsg err", err.Error())
@@ -234,9 +241,9 @@ func (ws *WServer) sendSignalMsgReq(conn *UserConn, m *Req) {
 	isPass, errCode, errMsg, pData := ws.argsValidate(m, constant.WSSendSignalMsg, m.OperationID)
 	if isPass {
 		signalResp := pbRtc.SignalResp{}
-		etcdConn := getcdv3.GetConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImRealTimeCommName, m.OperationID)
+		etcdConn := getcdv3.GetDefaultConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImRealTimeCommName, m.OperationID)
 		if etcdConn == nil {
-			errMsg := m.OperationID + "getcdv3.GetConn == nil"
+			errMsg := m.OperationID + "getcdv3.GetDefaultConn == nil"
 			log.NewError(m.OperationID, errMsg)
 			ws.sendSignalMsgResp(conn, 204, errMsg, m, &signalResp)
 			return
@@ -264,14 +271,14 @@ func (ws *WServer) sendSignalMsgReq(conn *UserConn, m *Req) {
 			}
 			log.NewInfo(m.OperationID, utils.GetSelfFuncName(), "pbData: ", pbData)
 			log.NewInfo(m.OperationID, "Ws call success to sendSignalMsgReq middle", m.ReqIdentifier, m.SendID, m.MsgIncr, msgData)
-			etcdConn := getcdv3.GetConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImOfflineMessageName, m.OperationID)
+			etcdConn := getcdv3.GetDefaultConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImMsgName, m.OperationID)
 			if etcdConn == nil {
-				errMsg := m.OperationID + "getcdv3.GetConn == nil"
+				errMsg := m.OperationID + "getcdv3.GetDefaultConn == nil"
 				log.NewError(m.OperationID, errMsg)
 				ws.sendSignalMsgResp(conn, 200, errMsg, m, &signalResp)
 				return
 			}
-			client := pbChat.NewChatClient(etcdConn)
+			client := pbChat.NewMsgClient(etcdConn)
 			reply, err := client.SendMsg(context.Background(), &pbData)
 			if err != nil {
 				log.NewError(pbData.OperationID, utils.GetSelfFuncName(), "rpc sendMsg err", err.Error())

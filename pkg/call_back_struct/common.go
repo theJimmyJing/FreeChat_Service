@@ -14,8 +14,10 @@ type CommonCallbackReq struct {
 	Status           int32    `json:"status"`
 	CreateTime       int64    `json:"createTime"`
 	Content          string   `json:"content"`
+	Seq              uint32   `json:"seq"`
 	AtUserIDList     []string `json:"atUserList"`
 	SenderFaceURL    string   `json:"faceURL"`
+	Ex               string   `json:"ex"`
 }
 
 type CommonCallbackResp struct {
@@ -25,10 +27,19 @@ type CommonCallbackResp struct {
 	OperationID string `json:"operationID"`
 }
 
-type UserStatusCallbackReq struct {
+type UserStatusBaseCallback struct {
 	CallbackCommand string `json:"callbackCommand"`
 	OperationID     string `json:"operationID"`
-	UserID          string `json:"userID"`
 	PlatformID      int32  `json:"platformID"`
 	Platform        string `json:"platform"`
+}
+
+type UserStatusCallbackReq struct {
+	UserStatusBaseCallback
+	UserID string `json:"userID"`
+}
+
+type UserStatusBatchCallbackReq struct {
+	UserStatusBaseCallback
+	UserIDList []string `json:"userIDList"`
 }

@@ -12,10 +12,13 @@ import (
 	"Open_IM/pkg/common/db/mysql_model/im_mysql_msg_model"
 	kfk "Open_IM/pkg/common/kafka"
 	"Open_IM/pkg/common/log"
-	pbMsg "Open_IM/pkg/proto/chat"
+	pbMsg "Open_IM/pkg/proto/msg"
 	"Open_IM/pkg/utils"
+
 	"github.com/Shopify/sarama"
 	"github.com/golang/protobuf/proto"
+
+	promePkg "Open_IM/pkg/common/prometheus"
 )
 
 type PersistentConsumerHandler struct {
@@ -30,6 +33,17 @@ func (pc *PersistentConsumerHandler) Init() {
 		OffsetsInitial: sarama.OffsetNewest, IsReturnErr: false}, []string{config.Config.Kafka.Ws2mschat.Topic},
 		config.Config.Kafka.Ws2mschat.Addr, config.Config.Kafka.ConsumerGroupID.MsgToMySql)
 
+}
+
+func initPrometheus() {
+	promePkg.NewSeqGetSuccessCounter()
+	promePkg.NewSeqGetFailedCounter()
+	promePkg.NewSeqSetSuccessCounter()
+	promePkg.NewSeqSetFailedCounter()
+	promePkg.NewMsgInsertRedisSuccessCounter()
+	promePkg.NewMsgInsertRedisFailedCounter()
+	promePkg.NewMsgInsertMongoSuccessCounter()
+	promePkg.NewMsgInsertMongoFailedCounter()
 }
 
 func (pc *PersistentConsumerHandler) handleChatWs2Mysql(cMsg *sarama.ConsumerMessage, msgKey string, _ sarama.ConsumerGroupSession) {

@@ -3,6 +3,7 @@ package apiAuth
 import (
 	api "Open_IM/pkg/base_info"
 	"Open_IM/pkg/common/config"
+	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/log"
 	"Open_IM/pkg/common/token_verify"
 	"Open_IM/pkg/grpc-etcdv3/getcdv3"
@@ -10,10 +11,11 @@ import (
 	open_im_sdk "Open_IM/pkg/proto/sdk_ws"
 	"Open_IM/pkg/utils"
 	"context"
-	"github.com/fatih/structs"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
+
+	"github.com/fatih/structs"
+	"github.com/gin-gonic/gin"
 )
 
 // @Summary 用户注册
@@ -21,7 +23,6 @@ import (
 // @Tags 鉴权认证
 // @ID UserRegister
 // @Accept json
-// @Param token header string true "im token"
 // @Param req body api.UserRegisterReq true "secret为openIM密钥, 详细见服务端config.yaml secret字段 <br> platform为平台ID <br> ex为拓展字段 <br> gender为性别, 0为女, 1为男"
 // @Produce json
 // @Success 0 {object} api.UserRegisterResp
@@ -48,9 +49,9 @@ func UserRegister(c *gin.Context) {
 	//copier.Copy(req.UserInfo, &params)
 	req.OperationID = params.OperationID
 	log.NewInfo(req.OperationID, "UserRegister args ", req.String())
-	etcdConn := getcdv3.GetConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImAuthName, req.OperationID)
+	etcdConn := getcdv3.GetDefaultConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImAuthName, req.OperationID)
 	if etcdConn == nil {
-		errMsg := req.OperationID + " getcdv3.GetConn == nil"
+		errMsg := req.OperationID + " getcdv3.GetDefaultConn == nil"
 		log.NewError(req.OperationID, errMsg)
 		c.JSON(http.StatusInternalServerError, gin.H{"errCode": 500, "errMsg": errMsg})
 		return
@@ -66,7 +67,13 @@ func UserRegister(c *gin.Context) {
 	if reply.CommonResp.ErrCode != 0 {
 		errMsg := req.OperationID + " " + " UserRegister failed " + reply.CommonResp.ErrMsg + req.String()
 		log.NewError(req.OperationID, errMsg)
-		c.JSON(http.StatusInternalServerError, gin.H{"errCode": 500, "errMsg": errMsg})
+		if reply.CommonResp.ErrCode == constant.RegisterLimit {
+			c.JSON(http.StatusOK, gin.H{"errCode": constant.RegisterLimit, "errMsg": "用户注册被限制"})
+		} else if reply.CommonResp.ErrCode == constant.InvitationError {
+			c.JSON(http.StatusOK, gin.H{"errCode": constant.InvitationError, "errMsg": "邀请码错误"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"errCode": 500, "errMsg": errMsg})
+		}
 		return
 	}
 
@@ -90,7 +97,6 @@ func UserRegister(c *gin.Context) {
 // @Tags 鉴权认证
 // @ID UserToken
 // @Accept json
-// @Param token header string true "im token"
 // @Param req body api.UserTokenReq true "secret为openIM密钥, 详细见服务端config.yaml secret字段 <br> platform为平台ID"
 // @Produce json
 // @Success 0 {object} api.UserTokenResp
@@ -101,7 +107,7 @@ func UserToken(c *gin.Context) {
 	params := api.UserTokenReq{}
 	if err := c.BindJSON(&params); err != nil {
 		errMsg := " BindJSON failed " + err.Error()
-		log.NewError("0", errMsg)
+		log.NewError(params.OperationID, errMsg)
 		c.JSON(http.StatusBadRequest, gin.H{"errCode": 400, "errMsg": errMsg})
 		return
 	}
@@ -112,11 +118,11 @@ func UserToken(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"errCode": 401, "errMsg": errMsg})
 		return
 	}
-	req := &rpc.UserTokenReq{Platform: params.Platform, FromUserID: params.UserID, OperationID: params.OperationID}
+	req := &rpc.UserTokenReq{Platform: params.Platform, FromUserID: params.UserID, OperationID: params.OperationID, LoginIp: params.LoginIp}
 	log.NewInfo(req.OperationID, "UserToken args ", req.String())
-	etcdConn := getcdv3.GetConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImAuthName, req.OperationID)
+	etcdConn := getcdv3.GetDefaultConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImAuthName, req.OperationID)
 	if etcdConn == nil {
-		errMsg := req.OperationID + " getcdv3.GetConn == nil"
+		errMsg := req.OperationID + " getcdv3.GetDefaultConn == nil"
 		log.NewError(req.OperationID, errMsg)
 		c.JSON(http.StatusInternalServerError, gin.H{"errCode": 500, "errMsg": errMsg})
 		return
@@ -152,7 +158,7 @@ func ParseToken(c *gin.Context) {
 	if err := c.BindJSON(&params); err != nil {
 		errMsg := " BindJSON failed " + err.Error()
 		log.NewError("0", errMsg)
-		c.JSON(http.StatusBadRequest, gin.H{"errCode": 400, "errMsg": errMsg})
+		c.JSON(http.StatusOK, gin.H{"errCode": 1001, "errMsg": errMsg})
 		return
 	}
 
@@ -161,9 +167,9 @@ func ParseToken(c *gin.Context) {
 	var expireTime int64
 	ok, _, errInfo, expireTime = token_verify.GetUserIDFromTokenExpireTime(c.Request.Header.Get("token"), params.OperationID)
 	if !ok {
-		errMsg := params.OperationID + " " + "GetUserIDFromTokenExpireTime failed " + errInfo + " token:" + c.Request.Header.Get("token")
+		errMsg := params.OperationID + " " + "GetUserIDFromTokenExpireTime failed " + errInfo
 		log.NewError(params.OperationID, errMsg)
-		c.JSON(http.StatusInternalServerError, gin.H{"errCode": 500, "errMsg": errMsg})
+		c.JSON(http.StatusOK, gin.H{"errCode": 1001, "errMsg": errMsg})
 		return
 	}
 
@@ -208,9 +214,9 @@ func ForceLogout(c *gin.Context) {
 	}
 
 	log.NewInfo(req.OperationID, "ForceLogout args ", req.String())
-	etcdConn := getcdv3.GetConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImAuthName, req.OperationID)
+	etcdConn := getcdv3.GetDefaultConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImAuthName, req.OperationID)
 	if etcdConn == nil {
-		errMsg := req.OperationID + " getcdv3.GetConn == nil"
+		errMsg := req.OperationID + " getcdv3.GetDefaultConn == nil"
 		log.NewError(req.OperationID, errMsg)
 		c.JSON(http.StatusInternalServerError, gin.H{"errCode": 500, "errMsg": errMsg})
 		return

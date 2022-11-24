@@ -37,6 +37,10 @@ func RegisterEtcd4Unique(schema, etcdAddr, myHost string, myPort int, serviceNam
 	return RegisterEtcd(schema, etcdAddr, myHost, myPort, serviceName, ttl)
 }
 
+func GetTarget(schema, myHost string, myPort int, serviceName string) string {
+	return GetPrefix4Unique(schema, serviceName) + ":" + net.JoinHostPort(myHost, strconv.Itoa(myPort)) + "/"
+}
+
 //etcdAddr separated by commas
 func RegisterEtcd(schema, etcdAddr, myHost string, myPort int, serviceName string, ttl int) error {
 	operationID := utils.OperationIDGenerator()

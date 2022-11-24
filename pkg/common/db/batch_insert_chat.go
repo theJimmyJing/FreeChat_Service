@@ -2,8 +2,10 @@ package db
 
 import (
 	"Open_IM/pkg/common/config"
+	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/log"
-	pbMsg "Open_IM/pkg/proto/chat"
+	promePkg "Open_IM/pkg/common/prometheus"
+	pbMsg "Open_IM/pkg/proto/msg"
 	"Open_IM/pkg/utils"
 	"context"
 	"errors"
@@ -13,10 +15,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (d *DataBases) BatchDeleteChat2DB(userID string, msgList []*pbMsg.MsgDataToMQ, operationID string) {
-
-}
-
 func (d *DataBases) BatchInsertChat2DB(userID string, msgList []*pbMsg.MsgDataToMQ, operationID string, currentMaxSeq uint64) error {
 	newTime := getCurrentTimestampByMill()
 	if len(msgList) > GetSingleGocMsgNum() {
@@ -25,12 +23,15 @@ func (d *DataBases) BatchInsertChat2DB(userID string, msgList []*pbMsg.MsgDataTo
 	isInit := false
 	var remain uint64
 	blk0 := uint64(GetSingleGocMsgNum() - 1)
+	//currentMaxSeq 4998
 	if currentMaxSeq < uint64(GetSingleGocMsgNum()) {
-		remain = blk0 - currentMaxSeq
+		remain = blk0 - currentMaxSeq //1
 	} else {
-		excludeBlk0 := currentMaxSeq - blk0
+		excludeBlk0 := currentMaxSeq - blk0 //=1
+		//(5000-1)%5000 == 4999
 		remain = (uint64(GetSingleGocMsgNum()) - (excludeBlk0 % uint64(GetSingleGocMsgNum()))) % uint64(GetSingleGocMsgNum())
 	}
+	//remain=1
 	insertCounter := uint64(0)
 	msgListToMongo := make([]MsgInfo, 0)
 	msgListToMongoNext := make([]MsgInfo, 0)
@@ -44,6 +45,7 @@ func (d *DataBases) BatchInsertChat2DB(userID string, msgList []*pbMsg.MsgDataTo
 		sMsg := MsgInfo{}
 		sMsg.SendTime = m.MsgData.SendTime
 		m.MsgData.Seq = uint32(currentMaxSeq)
+		log.Debug(operationID, "mongo msg node ", m.String(), m.MsgData.ClientMsgID, "userID: ", userID, "seq: ", currentMaxSeq)
 		if sMsg.Msg, err = proto.Marshal(m.MsgData); err != nil {
 			return utils.Wrap(err, "")
 		}
@@ -57,11 +59,11 @@ func (d *DataBases) BatchInsertChat2DB(userID string, msgList []*pbMsg.MsgDataTo
 			msgListToMongo = append(msgListToMongo, sMsg)
 			insertCounter++
 			seqUid = getSeqUid(userID, uint32(currentMaxSeq))
-			log.Debug(operationID, "msgListToMongo ", seqUid, m.MsgData.Seq, m.MsgData.ClientMsgID, insertCounter, remain)
+			log.Debug(operationID, "msgListToMongo ", seqUid, m.MsgData.Seq, m.MsgData.ClientMsgID, insertCounter, remain, "userID: ", userID)
 		} else {
 			msgListToMongoNext = append(msgListToMongoNext, sMsg)
 			seqUidNext = getSeqUid(userID, uint32(currentMaxSeq))
-			log.Debug(operationID, "msgListToMongoNext ", seqUidNext, m.MsgData.Seq, m.MsgData.ClientMsgID, insertCounter, remain)
+			log.Debug(operationID, "msgListToMongoNext ", seqUidNext, m.MsgData.Seq, m.MsgData.ClientMsgID, insertCounter, remain, "userID: ", userID)
 		}
 	}
 
@@ -70,7 +72,7 @@ func (d *DataBases) BatchInsertChat2DB(userID string, msgList []*pbMsg.MsgDataTo
 
 	if seqUid != "" {
 		filter := bson.M{"uid": seqUid}
-		log.NewDebug(operationID, "filter ", seqUid, "list ", msgListToMongo)
+		log.NewDebug(operationID, "filter ", seqUid, "list ", msgListToMongo, "userID: ", userID)
 		err := c.FindOneAndUpdate(ctx, filter, bson.M{"$push": bson.M{"msg": bson.M{"$each": msgListToMongo}}}).Err()
 		if err != nil {
 			if err == mongo.ErrNoDocuments {
@@ -80,10 +82,13 @@ func (d *DataBases) BatchInsertChat2DB(userID string, msgList []*pbMsg.MsgDataTo
 				sChat.Msg = msgListToMongo
 				log.NewDebug(operationID, "filter ", seqUid, "list ", msgListToMongo)
 				if _, err = c.InsertOne(ctx, &sChat); err != nil {
+					promePkg.PromeInc(promePkg.MsgInsertMongoFailedCounter)
 					log.NewError(operationID, "InsertOne failed", filter, err.Error(), sChat)
 					return utils.Wrap(err, "")
 				}
+				promePkg.PromeInc(promePkg.MsgInsertMongoSuccessCounter)
 			} else {
+				promePkg.PromeInc(promePkg.MsgInsertMongoFailedCounter)
 				log.Error(operationID, "FindOneAndUpdate failed ", err.Error(), filter)
 				return utils.Wrap(err, "")
 			}
@@ -94,45 +99,72 @@ func (d *DataBases) BatchInsertChat2DB(userID string, msgList []*pbMsg.MsgDataTo
 		sChat := UserChat{}
 		sChat.UID = seqUidNext
 		sChat.Msg = msgListToMongoNext
-		log.NewDebug(operationID, "filter ", seqUidNext, "list ", msgListToMongoNext)
+		log.NewDebug(operationID, "filter ", seqUidNext, "list ", msgListToMongoNext, "userID: ", userID)
 		if _, err = c.InsertOne(ctx, &sChat); err != nil {
+			promePkg.PromeInc(promePkg.MsgInsertMongoFailedCounter)
 			log.NewError(operationID, "InsertOne failed", filter, err.Error(), sChat)
 			return utils.Wrap(err, "")
 		}
+		promePkg.PromeInc(promePkg.MsgInsertMongoSuccessCounter)
 	}
-	log.NewWarn(operationID, "batch mgo  cost time ", getCurrentTimestampByMill()-newTime, userID, len(msgList))
+	log.Debug(operationID, "batch mgo  cost time ", getCurrentTimestampByMill()-newTime, userID, len(msgList))
 	return nil
 }
 
-func (d *DataBases) BatchInsertChat2Cache(userID string, msgList []*pbMsg.MsgDataToMQ, operationID string) (error, uint64) {
+func (d *DataBases) BatchInsertChat2Cache(insertID string, msgList []*pbMsg.MsgDataToMQ, operationID string) (error, uint64) {
 	newTime := getCurrentTimestampByMill()
-	if len(msgList) > GetSingleGocMsgNum() {
+	lenList := len(msgList)
+	if lenList > GetSingleGocMsgNum() {
 		return errors.New("too large"), 0
 	}
-	currentMaxSeq, err := d.GetUserMaxSeq(userID)
-	if err == nil {
-
-	} else if err == go_redis.Nil {
-		currentMaxSeq = 0
+	if lenList < 1 {
+		return errors.New("too short as 0"), 0
+	}
+	// judge sessionType to get seq
+	var currentMaxSeq uint64
+	var err error
+	if msgList[0].MsgData.SessionType == constant.SuperGroupChatType {
+		currentMaxSeq, err = d.GetGroupMaxSeq(insertID)
+		log.Debug(operationID, "constant.SuperGroupChatType  lastMaxSeq before add ", currentMaxSeq, "userID ", insertID, err)
 	} else {
+		currentMaxSeq, err = d.GetUserMaxSeq(insertID)
+		log.Debug(operationID, "constant.SingleChatType  lastMaxSeq before add ", currentMaxSeq, "userID ", insertID, err)
+	}
+	if err != nil && err != go_redis.Nil {
+		promePkg.PromeInc(promePkg.SeqGetFailedCounter)
 		return utils.Wrap(err, ""), 0
 	}
-	lastMaxSeq := currentMaxSeq
+	promePkg.PromeInc(promePkg.SeqGetSuccessCounter)
 
+	lastMaxSeq := currentMaxSeq
 	for _, m := range msgList {
-		log.Debug(operationID, "msg node ", m.String(), m.MsgData.ClientMsgID)
+
 		currentMaxSeq++
 		sMsg := MsgInfo{}
 		sMsg.SendTime = m.MsgData.SendTime
 		m.MsgData.Seq = uint32(currentMaxSeq)
+		log.Debug(operationID, "cache msg node ", m.String(), m.MsgData.ClientMsgID, "userID: ", insertID, "seq: ", currentMaxSeq)
 	}
-	log.Debug(operationID, "SetMessageToCache ", userID, len(msgList))
-	err = d.SetMessageToCache(msgList, userID, operationID)
+	log.Debug(operationID, "SetMessageToCache ", insertID, len(msgList))
+	err, failedNum := d.SetMessageToCache(msgList, insertID, operationID)
 	if err != nil {
-		log.Error(operationID, "setMessageToCache failed, continue ", err.Error(), len(msgList), userID)
+		promePkg.PromeAdd(promePkg.MsgInsertRedisFailedCounter, failedNum)
+		log.Error(operationID, "setMessageToCache failed, continue ", err.Error(), len(msgList), insertID)
+	} else {
+		promePkg.PromeInc(promePkg.MsgInsertRedisSuccessCounter)
 	}
-	log.NewWarn(operationID, "batch to redis  cost time ", getCurrentTimestampByMill()-newTime, userID, len(msgList))
-	return utils.Wrap(d.SetUserMaxSeq(userID, uint64(currentMaxSeq)), ""), lastMaxSeq
+	log.Debug(operationID, "batch to redis  cost time ", getCurrentTimestampByMill()-newTime, insertID, len(msgList))
+	if msgList[0].MsgData.SessionType == constant.SuperGroupChatType {
+		err = d.SetGroupMaxSeq(insertID, currentMaxSeq)
+	} else {
+		err = d.SetUserMaxSeq(insertID, currentMaxSeq)
+	}
+	if err != nil {
+		promePkg.PromeInc(promePkg.SeqSetFailedCounter)
+	} else {
+		promePkg.PromeInc(promePkg.SeqSetSuccessCounter)
+	}
+	return utils.Wrap(err, ""), lastMaxSeq
 }
 
 //func (d *DataBases) BatchInsertChatBoth(userID string, msgList []*pbMsg.MsgDataToMQ, operationID string) (error, uint64) {
@@ -151,106 +183,100 @@ func (d *DataBases) BatchInsertChat2Cache(userID string, msgList []*pbMsg.MsgDat
 //	}
 //	return nil, lastMaxSeq
 //}
-
-func (d *DataBases) BatchInsertChat(userID string, msgList []*pbMsg.MsgDataToMQ, operationID string) error {
-	newTime := getCurrentTimestampByMill()
-	if len(msgList) > GetSingleGocMsgNum() {
-		return errors.New("too large")
-	}
-	isInit := false
-	currentMaxSeq, err := d.GetUserMaxSeq(userID)
-	if err == nil {
-
-	} else if err == go_redis.Nil {
-		isInit = true
-		currentMaxSeq = 0
-	} else {
-		return utils.Wrap(err, "")
-	}
-	var remain uint64
-	//if currentMaxSeq < uint64(GetSingleGocMsgNum()) {
-	//	remain = uint64(GetSingleGocMsgNum()-1) - (currentMaxSeq % uint64(GetSingleGocMsgNum()))
-	//} else {
-	//	remain = uint64(GetSingleGocMsgNum()) - ((currentMaxSeq - (uint64(GetSingleGocMsgNum()) - 1)) % uint64(GetSingleGocMsgNum()))
-	//}
-
-	blk0 := uint64(GetSingleGocMsgNum() - 1)
-	if currentMaxSeq < uint64(GetSingleGocMsgNum()) {
-		remain = blk0 - currentMaxSeq
-	} else {
-		excludeBlk0 := currentMaxSeq - blk0
-		remain = (uint64(GetSingleGocMsgNum()) - (excludeBlk0 % uint64(GetSingleGocMsgNum()))) % uint64(GetSingleGocMsgNum())
-	}
-
-	insertCounter := uint64(0)
-	msgListToMongo := make([]MsgInfo, 0)
-	msgListToMongoNext := make([]MsgInfo, 0)
-	seqUid := ""
-	seqUidNext := ""
-	log.Debug(operationID, "remain ", remain, "insertCounter ", insertCounter, "currentMaxSeq ", currentMaxSeq, userID, len(msgList))
-	//4998 remain ==1
-	//4999
-	for _, m := range msgList {
-		log.Debug(operationID, "msg node ", m.String(), m.MsgData.ClientMsgID)
-		currentMaxSeq++
-		sMsg := MsgInfo{}
-		sMsg.SendTime = m.MsgData.SendTime
-		m.MsgData.Seq = uint32(currentMaxSeq)
-		if sMsg.Msg, err = proto.Marshal(m.MsgData); err != nil {
-			return utils.Wrap(err, "")
-		}
-		if isInit {
-			msgListToMongoNext = append(msgListToMongoNext, sMsg)
-			seqUidNext = getSeqUid(userID, uint32(currentMaxSeq))
-			log.Debug(operationID, "msgListToMongoNext ", seqUidNext, m.MsgData.Seq, m.MsgData.ClientMsgID, insertCounter, remain)
-			continue
-		}
-		if insertCounter < remain {
-			msgListToMongo = append(msgListToMongo, sMsg)
-			insertCounter++
-			seqUid = getSeqUid(userID, uint32(currentMaxSeq))
-			log.Debug(operationID, "msgListToMongo ", seqUid, m.MsgData.Seq, m.MsgData.ClientMsgID, insertCounter, remain)
-		} else {
-			msgListToMongoNext = append(msgListToMongoNext, sMsg)
-			seqUidNext = getSeqUid(userID, uint32(currentMaxSeq))
-			log.Debug(operationID, "msgListToMongoNext ", seqUidNext, m.MsgData.Seq, m.MsgData.ClientMsgID, insertCounter, remain)
-		}
-	}
-	//	ctx, _ := context.WithTimeout(context.Background(), time.Duration(config.Config.Mongo.DBTimeout)*time.Second)
-
-	ctx := context.Background()
-	c := d.mongoClient.Database(config.Config.Mongo.DBDatabase).Collection(cChat)
-
-	if seqUid != "" {
-		filter := bson.M{"uid": seqUid}
-		log.NewDebug(operationID, "filter ", seqUid, "list ", msgListToMongo)
-		err := c.FindOneAndUpdate(ctx, filter, bson.M{"$push": bson.M{"msg": bson.M{"$each": msgListToMongo}}}).Err()
-		if err != nil {
-			log.Error(operationID, "FindOneAndUpdate failed ", err.Error(), filter)
-			return utils.Wrap(err, "")
-		}
-	}
-	if seqUidNext != "" {
-		filter := bson.M{"uid": seqUidNext}
-		sChat := UserChat{}
-		sChat.UID = seqUidNext
-		sChat.Msg = msgListToMongoNext
-		log.NewDebug(operationID, "filter ", seqUidNext, "list ", msgListToMongoNext)
-		if _, err = c.InsertOne(ctx, &sChat); err != nil {
-			log.NewError(operationID, "InsertOne failed", filter, err.Error(), sChat)
-			return utils.Wrap(err, "")
-		}
-	}
-	log.NewWarn(operationID, "batch mgo  cost time ", getCurrentTimestampByMill()-newTime, userID, len(msgList))
-	return utils.Wrap(d.SetUserMaxSeq(userID, uint64(currentMaxSeq)), "")
-}
+//
+//func (d *DataBases) BatchInsertChat(userID string, msgList []*pbMsg.MsgDataToMQ, operationID string) error {
+//	newTime := getCurrentTimestampByMill()
+//	if len(msgList) > GetSingleGocMsgNum() {
+//		return errors.New("too large")
+//	}
+//	isInit := false
+//	currentMaxSeq, err := d.GetUserMaxSeq(userID)
+//	if err == nil {
+//
+//	} else if err == go_redis.Nil {
+//		isInit = true
+//		currentMaxSeq = 0
+//	} else {
+//		return utils.Wrap(err, "")
+//	}
+//	var remain uint64
+//	//if currentMaxSeq < uint64(GetSingleGocMsgNum()) {
+//	//	remain = uint64(GetSingleGocMsgNum()-1) - (currentMaxSeq % uint64(GetSingleGocMsgNum()))
+//	//} else {
+//	//	remain = uint64(GetSingleGocMsgNum()) - ((currentMaxSeq - (uint64(GetSingleGocMsgNum()) - 1)) % uint64(GetSingleGocMsgNum()))
+//	//}
+//
+//	blk0 := uint64(GetSingleGocMsgNum() - 1)
+//	if currentMaxSeq < uint64(GetSingleGocMsgNum()) {
+//		remain = blk0 - currentMaxSeq
+//	} else {
+//		excludeBlk0 := currentMaxSeq - blk0
+//		remain = (uint64(GetSingleGocMsgNum()) - (excludeBlk0 % uint64(GetSingleGocMsgNum()))) % uint64(GetSingleGocMsgNum())
+//	}
+//
+//	insertCounter := uint64(0)
+//	msgListToMongo := make([]MsgInfo, 0)
+//	msgListToMongoNext := make([]MsgInfo, 0)
+//	seqUid := ""
+//	seqUidNext := ""
+//	log.Debug(operationID, "remain ", remain, "insertCounter ", insertCounter, "currentMaxSeq ", currentMaxSeq, userID, len(msgList))
+//	//4998 remain ==1
+//	//4999
+//	for _, m := range msgList {
+//		log.Debug(operationID, "msg node ", m.String(), m.MsgData.ClientMsgID)
+//		currentMaxSeq++
+//		sMsg := MsgInfo{}
+//		sMsg.SendTime = m.MsgData.SendTime
+//		m.MsgData.Seq = uint32(currentMaxSeq)
+//		if sMsg.Msg, err = proto.Marshal(m.MsgData); err != nil {
+//			return utils.Wrap(err, "")
+//		}
+//		if isInit {
+//			msgListToMongoNext = append(msgListToMongoNext, sMsg)
+//			seqUidNext = getSeqUid(userID, uint32(currentMaxSeq))
+//			log.Debug(operationID, "msgListToMongoNext ", seqUidNext, m.MsgData.Seq, m.MsgData.ClientMsgID, insertCounter, remain)
+//			continue
+//		}
+//		if insertCounter < remain {
+//			msgListToMongo = append(msgListToMongo, sMsg)
+//			insertCounter++
+//			seqUid = getSeqUid(userID, uint32(currentMaxSeq))
+//			log.Debug(operationID, "msgListToMongo ", seqUid, m.MsgData.Seq, m.MsgData.ClientMsgID, insertCounter, remain)
+//		} else {
+//			msgListToMongoNext = append(msgListToMongoNext, sMsg)
+//			seqUidNext = getSeqUid(userID, uint32(currentMaxSeq))
+//			log.Debug(operationID, "msgListToMongoNext ", seqUidNext, m.MsgData.Seq, m.MsgData.ClientMsgID, insertCounter, remain)
+//		}
+//	}
+//	//	ctx, _ := context.WithTimeout(context.Background(), time.Duration(config.Config.Mongo.DBTimeout)*time.Second)
+//
+//	ctx := context.Background()
+//	c := d.mongoClient.Database(config.Config.Mongo.DBDatabase).Collection(cChat)
+//
+//	if seqUid != "" {
+//		filter := bson.M{"uid": seqUid}
+//		log.NewDebug(operationID, "filter ", seqUid, "list ", msgListToMongo)
+//		err := c.FindOneAndUpdate(ctx, filter, bson.M{"$push": bson.M{"msg": bson.M{"$each": msgListToMongo}}}).Err()
+//		if err != nil {
+//			log.Error(operationID, "FindOneAndUpdate failed ", err.Error(), filter)
+//			return utils.Wrap(err, "")
+//		}
+//	}
+//	if seqUidNext != "" {
+//		filter := bson.M{"uid": seqUidNext}
+//		sChat := UserChat{}
+//		sChat.UID = seqUidNext
+//		sChat.Msg = msgListToMongoNext
+//		log.NewDebug(operationID, "filter ", seqUidNext, "list ", msgListToMongoNext)
+//		if _, err = c.InsertOne(ctx, &sChat); err != nil {
+//			log.NewError(operationID, "InsertOne failed", filter, err.Error(), sChat)
+//			return utils.Wrap(err, "")
+//		}
+//	}
+//	log.NewWarn(operationID, "batch mgo  cost time ", getCurrentTimestampByMill()-newTime, userID, len(msgList))
+//	return utils.Wrap(d.SetUserMaxSeq(userID, uint64(currentMaxSeq)), "")
+//}
 
 //func (d *DataBases)setMessageToCache(msgList []*pbMsg.MsgDataToMQ, uid string) (err error) {
 //
 //}
-
-func (d *DataBases) GetFromCacheAndInsertDB(msgUserIDPrefix string) {
-	//get value from redis
-
-	//batch insert to db
-}

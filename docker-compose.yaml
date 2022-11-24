@@ -25,16 +25,16 @@ services:
       - ./components/mongodb/data/db:/data/db
       - ./components/mongodb/data/logs:/data/logs
       - ./components/mongodb/data/conf:/etc/mongo
-#      - ./script/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh
+    #      - ./script/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh
     environment:
       - TZ=Asia/Shanghai
       # cache
       - wiredTigerCacheSizeGB=1
-#      - MONGO_USERNAME=openIM
-#      - MONGO_PASSWORD=openIM
-#      - MONGO_INITDB_ROOT_USERNAME=root
-#      - MONGO_INITDB_ROOT_PASSWORD=root
-#      - MONGO_INITDB_DATABASE=openIM
+    #      - MONGO_USERNAME=openIM
+    #      - MONGO_PASSWORD=openIM
+    #      - MONGO_INITDB_ROOT_USERNAME=root
+    #      - MONGO_INITDB_ROOT_PASSWORD=root
+    #      - MONGO_INITDB_DATABASE=openIM
     restart: always
 
   redis:
@@ -71,7 +71,7 @@ services:
     container_name: kafka
     restart: always
     ports:
-     - 9092:9092
+      - 9092:9092
     environment:
       TZ: Asia/Shanghai
       KAFKA_BROKER_ID: 0
@@ -113,8 +113,9 @@ services:
     restart: always
     command: minio server /data --console-address ':9090'
 
+
   open_im_server:
-    image: openim/open_im_server:v2.2.0
+    image: openim/open_im_server:v2.3.2
     container_name: open_im_server
     volumes:
       - ./logs:/Open-IM-Server/logs
@@ -135,3 +136,42 @@ services:
       options:
         max-size: "1g"
         max-file: "2"
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./docker-compose_cfg/prometheus-compose.yml:/etc/prometheus/prometheus.yml
+      # - ./components/prometheus_data:/prometheus
+    container_name: prometheus
+    ports:
+    - 9091:9091
+    depends_on:
+    - open_im_server
+    command: --web.listen-address=:9091 --config.file="/etc/prometheus/prometheus.yml"
+    network_mode: "host" 
+
+  grafana:
+    image: grafana/grafana
+    volumes:
+    - ./docker-compose_cfg/datasource-compose.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+    - ./docker-compose_cfg/grafana.ini:/etc/grafana/grafana.ini
+    # - ./docker-compose_cfg/node-exporter-full_rev1.json:/var/lib/grafana/dashboards/node-exporter-full_rev1.json
+    # - ./components/grafana:/var/lib/grafana
+    - ./docker-compose_cfg/grafana.db:/var/lib/grafana/grafana.db
+    container_name: grafana
+    ports:
+    - 10007:10007
+    depends_on:
+    - prometheus
+    network_mode: "host" 
+    privileged: true
+    user: root
+    # -rw-r-----
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter
+    container_name: node-exporter
+    restart: always
+    ports:
+      - "9100:9100"
+    # command: --collector.ENTER-THE-NAME-OF-COLLECTOR

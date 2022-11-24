@@ -8,11 +8,13 @@ package logic
 
 import (
 	pusher "Open_IM/internal/push"
+	fcm "Open_IM/internal/push/fcm"
 	"Open_IM/internal/push/getui"
 	jpush "Open_IM/internal/push/jpush"
 	"Open_IM/pkg/common/config"
 	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/kafka"
+	promePkg "Open_IM/pkg/common/prometheus"
 	"Open_IM/pkg/statistics"
 	"fmt"
 )
@@ -20,17 +22,15 @@ import (
 var (
 	rpcServer     RPCServer
 	pushCh        PushConsumerHandler
-	pushTerminal  []int32
 	producer      *kafka.Producer
 	offlinePusher pusher.OfflinePusher
 	successCount  uint64
 )
 
 func Init(rpcPort int) {
-
 	rpcServer.Init(rpcPort)
 	pushCh.Init()
-	pushTerminal = []int32{constant.IOSPlatformID, constant.AndroidPlatformID}
+
 }
 func init() {
 	producer = kafka.NewKafkaProducer(config.Config.Kafka.Ws2mschat.Addr, config.Config.Kafka.Ws2mschat.Topic)
@@ -41,9 +41,24 @@ func init() {
 	if config.Config.Push.Jpns.Enable {
 		offlinePusher = jpush.JPushClient
 	}
+
+	if config.Config.Push.Fcm.Enable {
+		offlinePusher = fcm.NewFcm()
+	}
 }
 
-func Run() {
+func initPrometheus() {
+	promePkg.NewMsgOfflinePushSuccessCounter()
+	promePkg.NewMsgOfflinePushFailedCounter()
+}
+
+func Run(promethuesPort int) {
 	go rpcServer.run()
 	go pushCh.pushConsumerGroup.RegisterHandleAndConsumer(&pushCh)
+	go func() {
+		err := promePkg.StartPromeSrv(promethuesPort)
+		if err != nil {
+			panic(err)
+		}
+	}()
 }

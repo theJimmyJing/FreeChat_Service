@@ -15,6 +15,8 @@ type ApiUserInfo struct {
 	Gender      int32  `json:"gender" binding:"omitempty,oneof=-1 0 1 2 3"`
 	PhoneNumber string `json:"phoneNumber" binding:"omitempty,max=32"`
 	Birth       uint32 `json:"birth" binding:"omitempty"`
+	CreateTime  int64  `json:"createTime"`
+	LoginLimit  int32  `json:"loginLimit" binding:"omitempty"`
 	Ex          string `json:"ex" binding:"omitempty,max=1024"`
 }
 
@@ -34,7 +36,7 @@ type ApiUserInfo struct {
 
 type GroupAddMemberInfo struct {
 	UserID    string `json:"userID" binding:"required"`
-	RoleLevel int32  `json:"roleLevel" binding:"required"`
+	RoleLevel int32  `json:"roleLevel" binding:"required,oneof= 1 3"`
 }
 
 func SetErrCodeMsg(c *gin.Context, status int) *CommResp {

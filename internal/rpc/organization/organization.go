@@ -6,7 +6,9 @@ import (
 	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/db"
 	imdb "Open_IM/pkg/common/db/mysql_model/im_mysql_model"
+	rocksCache "Open_IM/pkg/common/db/rocks_cache"
 	"Open_IM/pkg/common/log"
+	promePkg "Open_IM/pkg/common/prometheus"
 	"Open_IM/pkg/common/token_verify"
 	"Open_IM/pkg/grpc-etcdv3/getcdv3"
 	pbAuth "Open_IM/pkg/proto/auth"
@@ -19,6 +21,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	grpcPrometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 
 	"google.golang.org/grpc"
 )
@@ -57,7 +61,18 @@ func (s *organizationServer) Run() {
 	log.NewInfo("", "listen network success, ", address, listener)
 	defer listener.Close()
 	//grpc server
-	srv := grpc.NewServer()
+	var grpcOpts []grpc.ServerOption
+	if config.Config.Prometheus.Enable {
+		promePkg.NewGrpcRequestCounter()
+		promePkg.NewGrpcRequestFailedCounter()
+		promePkg.NewGrpcRequestSuccessCounter()
+		grpcOpts = append(grpcOpts, []grpc.ServerOption{
+			// grpc.UnaryInterceptor(promePkg.UnaryServerInterceptorProme),
+			grpc.StreamInterceptor(grpcPrometheus.StreamServerInterceptor),
+			grpc.UnaryInterceptor(grpcPrometheus.UnaryServerInterceptor),
+		}...)
+	}
+	srv := grpc.NewServer(grpcOpts...)
 	defer srv.GracefulStop()
 	//Service registers with etcd
 	rpc.RegisterOrganizationServer(srv, s)
@@ -72,7 +87,7 @@ func (s *organizationServer) Run() {
 	err = getcdv3.RegisterEtcd(s.etcdSchema, strings.Join(s.etcdAddr, ","), rpcRegisterIP, s.rpcPort, s.rpcRegisterName, 10)
 	if err != nil {
 		log.NewError("", "RegisterEtcd failed ", err.Error())
-		return
+		panic(utils.Wrap(err, "register organization module  rpc to etcd err"))
 	}
 	log.NewInfo("", "organization rpc RegisterEtcd success", rpcRegisterIP, s.rpcPort, s.rpcRegisterName, 10)
 	err = srv.Serve(listener)
@@ -112,11 +127,15 @@ func (s *organizationServer) CreateDepartment(ctx context.Context, req *rpc.Crea
 	resp := &rpc.CreateDepartmentResp{DepartmentInfo: &open_im_sdk.Department{}}
 	utils.CopyStructFields(resp.DepartmentInfo, createdDepartment)
 	log.NewInfo(req.OperationID, utils.GetSelfFuncName(), " rpc return ", *resp)
+	if err := rocksCache.DelAllDepartmentsFromCache(); err != nil {
+		errMsg := req.OperationID + " " + "UpdateDepartment failed " + err.Error()
+		log.Error(req.OperationID, errMsg)
+		return &rpc.CreateDepartmentResp{ErrCode: constant.ErrDB.ErrCode, ErrMsg: errMsg}, nil
+	}
 	chat.OrganizationNotificationToAll(req.OpUserID, req.OperationID)
-
-	etcdConn := getcdv3.GetConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImGroupName, req.OperationID)
+	etcdConn := getcdv3.GetDefaultConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImGroupName, req.OperationID)
 	if etcdConn == nil {
-		errMsg := req.OperationID + "getcdv3.GetConn == nil"
+		errMsg := req.OperationID + "getcdv3.GetDefaultConn == nil"
 		log.NewError(req.OperationID, errMsg)
 		resp.ErrCode = constant.ErrInternal.ErrCode
 		resp.ErrMsg = errMsg
@@ -170,10 +189,14 @@ func (s *organizationServer) UpdateDepartment(ctx context.Context, req *rpc.Upda
 	log.Debug(req.OperationID, "dst ", department, "src ", req.DepartmentInfo)
 	if err := imdb.UpdateDepartment(&department, nil); err != nil {
 		errMsg := req.OperationID + " " + "UpdateDepartment failed " + err.Error()
+		log.Error(req.OperationID, errMsg, department)
+		return &rpc.UpdateDepartmentResp{ErrCode: constant.ErrDB.ErrCode, ErrMsg: errMsg}, nil
+	}
+	if err := rocksCache.DelAllDepartmentsFromCache(); err != nil {
+		errMsg := req.OperationID + " " + "UpdateDepartment failed " + err.Error()
 		log.Error(req.OperationID, errMsg)
 		return &rpc.UpdateDepartmentResp{ErrCode: constant.ErrDB.ErrCode, ErrMsg: errMsg}, nil
 	}
-
 	resp := &rpc.UpdateDepartmentResp{}
 	log.NewInfo(req.OperationID, utils.GetSelfFuncName(), " rpc return ", *resp)
 	chat.OrganizationNotificationToAll(req.OpUserID, req.OperationID)
@@ -182,12 +205,24 @@ func (s *organizationServer) UpdateDepartment(ctx context.Context, req *rpc.Upda
 
 func (s *organizationServer) GetSubDepartment(ctx context.Context, req *rpc.GetSubDepartmentReq) (*rpc.GetSubDepartmentResp, error) {
 	log.NewInfo(req.OperationID, utils.GetSelfFuncName(), " rpc args ", req.String())
-	err, departmentList := imdb.GetSubDepartmentList(req.DepartmentID)
-	if err != nil {
-		errMsg := req.OperationID + " " + "GetDepartment failed " + err.Error()
-		log.Error(req.OperationID, errMsg)
-		return &rpc.GetSubDepartmentResp{ErrCode: constant.ErrDB.ErrCode, ErrMsg: errMsg}, nil
+	var departmentList []db.Department
+	var err error
+	if req.DepartmentID == "-1" {
+		departmentList, err = rocksCache.GetAllDepartmentsFromCache()
+		if err != nil {
+			errMsg := req.OperationID + " " + "GetDepartment failed " + err.Error()
+			log.Error(req.OperationID, errMsg)
+			return &rpc.GetSubDepartmentResp{ErrCode: constant.ErrDB.ErrCode, ErrMsg: errMsg}, nil
+		}
+	} else {
+		departmentList, err = imdb.GetSubDepartmentList(req.DepartmentID)
+		if err != nil {
+			errMsg := req.OperationID + " " + "GetDepartment failed " + err.Error()
+			log.Error(req.OperationID, errMsg)
+			return &rpc.GetSubDepartmentResp{ErrCode: constant.ErrDB.ErrCode, ErrMsg: errMsg}, nil
+		}
 	}
+
 	log.Debug(req.OperationID, "GetSubDepartmentList ", req.DepartmentID, departmentList)
 	resp := &rpc.GetSubDepartmentResp{}
 	for _, v := range departmentList {
@@ -224,6 +259,12 @@ func (s *organizationServer) DeleteDepartment(ctx context.Context, req *rpc.Dele
 		return &rpc.DeleteDepartmentResp{ErrCode: constant.ErrDB.ErrCode, ErrMsg: errMsg}, nil
 	}
 	log.Debug(req.OperationID, "DeleteDepartment ", req.DepartmentID)
+
+	if err := rocksCache.DelAllDepartmentsFromCache(); err != nil {
+		errMsg := req.OperationID + " " + "UpdateDepartment failed " + err.Error()
+		log.Error(req.OperationID, errMsg)
+		return &rpc.DeleteDepartmentResp{ErrCode: constant.ErrDB.ErrCode, ErrMsg: errMsg}, nil
+	}
 	resp := &rpc.DeleteDepartmentResp{}
 	log.NewInfo(req.OperationID, utils.GetSelfFuncName(), " rpc return ", resp)
 	chat.OrganizationNotificationToAll(req.OpUserID, req.OperationID)
@@ -235,9 +276,9 @@ func (s *organizationServer) CreateOrganizationUser(ctx context.Context, req *rp
 	utils.CopyStructFields(authReq.UserInfo, req.OrganizationUser)
 	authReq.OperationID = req.OperationID
 	if req.IsRegister {
-		etcdConn := getcdv3.GetConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImAuthName, req.OperationID)
+		etcdConn := getcdv3.GetDefaultConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImAuthName, req.OperationID)
 		if etcdConn == nil {
-			errMsg := req.OperationID + "getcdv3.GetConn == nil"
+			errMsg := req.OperationID + "getcdv3.GetDefaultConn == nil"
 			log.NewError(req.OperationID, errMsg)
 			return &rpc.CreateOrganizationUserResp{ErrCode: constant.ErrInternal.ErrCode, ErrMsg: errMsg}, nil
 		}
@@ -273,36 +314,13 @@ func (s *organizationServer) CreateOrganizationUser(ctx context.Context, req *rp
 	log.Debug(req.OperationID, "CreateOrganizationUser ", organizationUser)
 	resp := &rpc.CreateOrganizationUserResp{}
 	log.NewInfo(req.OperationID, utils.GetSelfFuncName(), " rpc return ", *resp)
-	chat.OrganizationNotificationToAll(req.OpUserID, req.OperationID)
+	//chat.OrganizationNotificationToAll(req.OpUserID, req.OperationID)
 	return resp, nil
 }
 
 func (s *organizationServer) UpdateOrganizationUser(ctx context.Context, req *rpc.UpdateOrganizationUserReq) (*rpc.UpdateOrganizationUserResp, error) {
-	authReq := &pbAuth.UserRegisterReq{UserInfo: &open_im_sdk.UserInfo{}}
-	utils.CopyStructFields(authReq.UserInfo, req.OrganizationUser)
-	authReq.OperationID = req.OperationID
-	etcdConn := getcdv3.GetConn(config.Config.Etcd.EtcdSchema, strings.Join(config.Config.Etcd.EtcdAddr, ","), config.Config.RpcRegisterName.OpenImAuthName, req.OperationID)
-	if etcdConn == nil {
-		errMsg := req.OperationID + "getcdv3.GetConn == nil"
-		log.NewError(req.OperationID, errMsg)
-		return &rpc.UpdateOrganizationUserResp{ErrCode: constant.ErrInternal.ErrCode, ErrMsg: errMsg}, nil
-	}
-	client := pbAuth.NewAuthClient(etcdConn)
-
-	reply, err := client.UserRegister(context.Background(), authReq)
-	if err != nil {
-		errMsg := "UserRegister failed " + err.Error()
-		log.NewError(req.OperationID, errMsg)
-		return &rpc.UpdateOrganizationUserResp{ErrCode: constant.ErrDB.ErrCode, ErrMsg: errMsg}, nil
-	}
-	if reply.CommonResp.ErrCode != 0 {
-		errMsg := "UserRegister failed " + reply.CommonResp.ErrMsg
-		log.NewError(req.OperationID, errMsg)
-		return &rpc.UpdateOrganizationUserResp{ErrCode: constant.ErrDB.ErrCode, ErrMsg: errMsg}, nil
-	}
-
 	log.NewInfo(req.OperationID, utils.GetSelfFuncName(), " rpc args ", req.String())
-	if !token_verify.IsManagerUserID(req.OpUserID) {
+	if !token_verify.IsManagerUserID(req.OpUserID) && req.OpUserID != req.OrganizationUser.UserID {
 		errMsg := req.OperationID + " " + req.OpUserID + " is not app manager"
 		log.Error(req.OperationID, errMsg)
 		return &rpc.UpdateOrganizationUserResp{ErrCode: constant.ErrAccess.ErrCode, ErrMsg: errMsg}, nil
@@ -315,7 +333,7 @@ func (s *organizationServer) UpdateOrganizationUser(ctx context.Context, req *rp
 	}
 
 	log.Debug(req.OperationID, "src ", *req.OrganizationUser, "dst ", organizationUser)
-	err = imdb.UpdateOrganizationUser(&organizationUser, nil)
+	err := imdb.UpdateOrganizationUser(&organizationUser, nil)
 	if err != nil {
 		errMsg := req.OperationID + " " + "CreateOrganizationUser failed " + err.Error()
 		log.Error(req.OperationID, errMsg, organizationUser)
@@ -353,7 +371,9 @@ func (s *organizationServer) CreateDepartmentMember(ctx context.Context, req *rp
 		return &rpc.CreateDepartmentMemberResp{ErrCode: constant.ErrDB.ErrCode, ErrMsg: errMsg}, nil
 	}
 	log.Debug(req.OperationID, "UpdateOrganizationUser ", departmentMember)
-
+	if err := rocksCache.DelAllDepartmentMembersFromCache(); err != nil {
+		log.NewError(req.OperationID, utils.GetSelfFuncName(), err.Error())
+	}
 	resp := &rpc.CreateDepartmentMemberResp{}
 	log.NewInfo(req.OperationID, utils.GetSelfFuncName(), " rpc return ", *resp)
 	chat.OrganizationNotificationToAll(req.OpUserID, req.OperationID)
@@ -477,11 +497,22 @@ func (s *organizationServer) DeleteOrganizationUser(ctx context.Context, req *rp
 
 func (s *organizationServer) GetDepartmentMember(ctx context.Context, req *rpc.GetDepartmentMemberReq) (*rpc.GetDepartmentMemberResp, error) {
 	log.NewInfo(req.OperationID, utils.GetSelfFuncName(), " rpc args ", req.String())
-	err, departmentMemberList := imdb.GetDepartmentMemberList(req.DepartmentID)
-	if err != nil {
-		errMsg := req.OperationID + " " + req.OpUserID + " is not app manager"
-		log.Error(req.OperationID, errMsg)
-		return &rpc.GetDepartmentMemberResp{ErrCode: constant.ErrAccess.ErrCode, ErrMsg: errMsg}, nil
+	var departmentMemberList []db.DepartmentMember
+	var err error
+	if req.DepartmentID == "-1" {
+		departmentMemberList, err = rocksCache.GetAllDepartmentMembersFromCache()
+		if err != nil {
+			errMsg := req.OperationID + " " + req.OpUserID + " is not app manager"
+			log.Error(req.OperationID, errMsg)
+			return &rpc.GetDepartmentMemberResp{ErrCode: constant.ErrAccess.ErrCode, ErrMsg: errMsg}, nil
+		}
+	} else {
+		departmentMemberList, err = imdb.GetDepartmentMemberList(req.DepartmentID)
+		if err != nil {
+			errMsg := req.OperationID + " " + req.OpUserID + " is not app manager"
+			log.Error(req.OperationID, errMsg)
+			return &rpc.GetDepartmentMemberResp{ErrCode: constant.ErrAccess.ErrCode, ErrMsg: errMsg}, nil
+		}
 	}
 
 	log.Debug(req.OperationID, "GetDepartmentMemberList ", departmentMemberList)

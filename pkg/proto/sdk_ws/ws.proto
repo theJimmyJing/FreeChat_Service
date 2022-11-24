@@ -21,6 +21,10 @@ message GroupInfo{
   string creatorUserID = 11;
   int32 groupType = 12;
   int32 needVerification = 13;
+  int32 lookMemberInfo =14;
+  int32 applyMemberFriend = 15;
+  uint32 notificationUpdateTime = 16;
+  string notificationUserID = 17;
 }
 
 message GroupInfoForSet{
@@ -31,6 +35,8 @@ message GroupInfoForSet{
   string faceURL = 5;
   string ex = 6;
   google.protobuf.Int32Value needVerification  = 7;
+  google.protobuf.Int32Value lookMemberInfo  = 8;
+  google.protobuf.Int32Value applyMemberFriend  = 9;
 }
 
 
@@ -46,6 +52,7 @@ message GroupMemberFullInfo {
   string operatorUserID = 9;
   string ex = 10;
   uint32 muteEndTime = 11;
+  string inviterUserID = 12;
 }
 
 message PublicUserInfo{
@@ -67,7 +74,7 @@ message UserInfo{
   string ex = 8;
   uint32 createTime = 9;
   int32 appMangerLevel = 10;
-  int32  globalRecvMsgOpt = 11;
+  int32 globalRecvMsgOpt = 11;
 }
 
 message FriendInfo{
@@ -99,6 +106,8 @@ message GroupRequest{
   string handleUserID = 7;
   uint32 handleTime = 8;
   string ex = 9;
+  int32 joinSource = 10;
+  string inviterUserID = 11;
 }
 
 message FriendRequest{
@@ -253,6 +262,8 @@ message MsgData {
   OfflinePushInfo offlinePushInfo = 19;
   repeated string atUserIDList = 20;
   bytes msgDataList = 21;
+  string attachedInfo = 22;
+  string  ex = 23;
 
 }
 message OfflinePushInfo{
@@ -476,6 +487,10 @@ message UserInfoUpdatedTips{
 //////////////////////conversation/////////////////////
 message ConversationUpdateTips{
  string UserID = 1;
+ repeated string conversationIDList = 2;
+ int64 updateUnreadCountTime = 3;
+
+
 }
 
 message ConversationSetPrivateTips{
@@ -511,6 +526,7 @@ message SignalReq {
       SignalAcceptReq accept = 4;
       SignalHungUpReq hungUp = 5;
       SignalRejectReq reject = 6;
+      SignalGetRoomByGroupIDReq GetRoomByGroupID = 7;
   }
 }
 
@@ -522,6 +538,7 @@ message SignalResp {
     SignalAcceptReply accept = 4;
     SignalHungUpReply hungUp = 5;
     SignalRejectReply reject = 6;
+    SignalGetRoomByGroupIDReply GetRoomByGroupID = 7;
   }
 }
 
@@ -617,6 +634,19 @@ message SignalRejectReq {
 
 message SignalRejectReply {
 
+}
+
+message SignalGetRoomByGroupIDReq {
+  string opUserID = 1;
+  string groupID = 2;
+}
+
+message SignalGetRoomByGroupIDReply {
+  InvitationInfo invitation = 1;
+  repeated string onConnectingUserIDList = 2;
+  string token = 3;
+  string roomID = 4;
+  string liveURL = 5;
 }
 
 

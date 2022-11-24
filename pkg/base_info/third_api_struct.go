@@ -7,11 +7,13 @@ type MinioStorageCredentialReq struct {
 }
 
 type MiniostorageCredentialResp struct {
-	SecretAccessKey string `json:"secretAccessKey"`
-	AccessKeyID     string `json:"accessKeyID"`
-	SessionToken    string `json:"sessionToken"`
-	BucketName      string `json:"bucketName"`
-	StsEndpointURL  string `json:"stsEndpointURL"`
+	SecretAccessKey  string `json:"secretAccessKey"`
+	AccessKeyID      string `json:"accessKeyID"`
+	SessionToken     string `json:"sessionToken"`
+	BucketName       string `json:"bucketName"`
+	StsEndpointURL   string `json:"stsEndpointURL"`
+	StorageTime      int    `json:"storageTime"`
+	IsDistributedMod bool   `json:"isDistributedMod"`
 }
 
 type MinioUploadFileReq struct {
@@ -96,4 +98,26 @@ type GetRTCInvitationInfoStartAppReq struct {
 
 type GetRTCInvitationInfoStartAppResp struct {
 	GetRTCInvitationInfoResp
+}
+
+/**
+ * FCM第三方上报Token
+ */
+type FcmUpdateTokenReq struct {
+	OperationID string `json:"operationID" binding:"required"`
+	Platform    int    `json:"platform" binding:"required,min=1,max=2"` //only for ios + android
+	FcmToken    string `json:"fcmToken" binding:"required"`
+}
+
+type FcmUpdateTokenResp struct {
+	CommResp
+}
+type SetAppBadgeReq struct {
+	OperationID    string `json:"operationID" binding:"required"`
+	FromUserID     string `json:"fromUserID" binding:"required"`
+	AppUnreadCount int32  `json:"appUnreadCount"`
+}
+
+type SetAppBadgeResp struct {
+	CommResp
 }

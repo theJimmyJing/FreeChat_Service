@@ -28,24 +28,30 @@ const (
 
 	///ContentType
 	//UserRelated
-	Text                = 101
-	Picture             = 102
-	Voice               = 103
-	Video               = 104
-	File                = 105
-	AtText              = 106
-	Merger              = 107
-	Card                = 108
-	Location            = 109
-	Custom              = 110
-	Revoke              = 111
-	HasReadReceipt      = 112
-	Typing              = 113
-	Quote               = 114
-	GroupHasReadReceipt = 116
-	Common              = 200
-	GroupMsg            = 201
-	SignalMsg           = 202
+	Text                         = 101
+	Picture                      = 102
+	Voice                        = 103
+	Video                        = 104
+	File                         = 105
+	AtText                       = 106
+	Merger                       = 107
+	Card                         = 108
+	Location                     = 109
+	Custom                       = 110
+	Revoke                       = 111
+	HasReadReceipt               = 112
+	Typing                       = 113
+	Quote                        = 114
+	GroupHasReadReceipt          = 116
+	AdvancedText                 = 117
+	AdvancedRevoke               = 118 //影响前者消息
+	CustomNotTriggerConversation = 119
+	CustomOnlineOnly             = 120
+
+	Common             = 200
+	GroupMsg           = 201
+	SignalMsg          = 202
+	CustomNotification = 203
 
 	//SysRelated
 	NotificationBegin                     = 1000
@@ -93,9 +99,11 @@ const (
 
 	SuperGroupNotificationBegin  = 1650
 	SuperGroupUpdateNotification = 1651
+	MsgDeleteNotification        = 1652
 	SuperGroupNotificationEnd    = 1699
 
 	ConversationPrivateChatNotification = 1701
+	ConversationUnreadNotification      = 1702
 
 	OrganizationChangedNotification = 1801
 
@@ -132,6 +140,8 @@ const (
 	WebAndOther = 3
 	//The PC side is mutually exclusive, and the mobile side is mutually exclusive, but the web side can be online at the same time
 	PcMobileAndWeb = 4
+	//The PC terminal can be online at the same time,but other terminal only one of the endpoints can login
+	PCAndOther = 5
 
 	OnlineStatus  = "online"
 	OfflineStatus = "offline"
@@ -161,9 +171,9 @@ const (
 	GroupStatusMuted     = 3
 
 	//GroupType
-	NormalGroup     = 0
-	SuperGroup      = 1
-	DepartmentGroup = 2
+	NormalGroup  = 0
+	SuperGroup   = 1
+	WorkingGroup = 2
 
 	GroupBaned          = 3
 	GroupBanPrivateChat = 4
@@ -171,9 +181,14 @@ const (
 	//UserJoinGroupSource
 	JoinByAdmin = 1
 
+	JoinByInvitation = 2
+	JoinBySearch     = 3
+	JoinByQRCode     = 4
+
 	//Minio
 	MinioDurationTimes = 3600
-
+	//Aws
+	AwsDurationTimes = 3600
 	// verificationCode used for
 	VerificationCodeForRegister       = 1
 	VerificationCodeForReset          = 2
@@ -183,14 +198,17 @@ const (
 	VerificationCodeForLoginSuffix    = "_forLogin"
 
 	//callbackCommand
-	CallbackBeforeSendSingleMsgCommand = "callbackBeforeSendSingleMsgCommand"
-	CallbackAfterSendSingleMsgCommand  = "callbackAfterSendSingleMsgCommand"
-	CallbackBeforeSendGroupMsgCommand  = "callbackBeforeSendGroupMsgCommand"
-	CallbackAfterSendGroupMsgCommand   = "callbackAfterSendGroupMsgCommand"
-	CallbackWordFilterCommand          = "callbackWordFilterCommand"
-	CallbackUserOnlineCommand          = "callbackUserOnlineCommand"
-	CallbackUserOfflineCommand         = "callbackUserOfflineCommand"
-	CallbackOfflinePushCommand         = "callbackOfflinePushCommand"
+	CallbackBeforeSendSingleMsgCommand  = "callbackBeforeSendSingleMsgCommand"
+	CallbackAfterSendSingleMsgCommand   = "callbackAfterSendSingleMsgCommand"
+	CallbackBeforeSendGroupMsgCommand   = "callbackBeforeSendGroupMsgCommand"
+	CallbackAfterSendGroupMsgCommand    = "callbackAfterSendGroupMsgCommand"
+	CallbackWordFilterCommand           = "callbackWordFilterCommand"
+	CallbackUserOnlineCommand           = "callbackUserOnlineCommand"
+	CallbackUserOfflineCommand          = "callbackUserOfflineCommand"
+	CallbackUserKickOffCommand          = "callbackUserKickOffCommand"
+	CallbackOfflinePushCommand          = "callbackOfflinePushCommand"
+	CallbackOnlinePushCommand           = "callbackOnlinePushCommand"
+	CallbackSuperGroupOnlinePushCommand = "callbackSuperGroupOnlinePushCommand"
 	//callback actionCode
 	ActionAllow     = 0
 	ActionForbidden = 1
@@ -213,7 +231,19 @@ const (
 	WorkMomentCommentNotification = 0
 	WorkMomentLikeNotification    = 1
 	WorkMomentAtUserNotification  = 2
+
+	// sendMsgStaus
+	MsgStatusNotExist = 0
+	MsgIsSending      = 1
+	MsgSendSuccessed  = 2
+	MsgSendFailed     = 3
 )
+
+const (
+	WriteDiffusion = 0
+	ReadDiffusion  = 1
+)
+
 const (
 	AtAllString       = "AtAllTag"
 	AtNormal          = 0
@@ -243,6 +273,7 @@ const (
 	FieldGroupAtType   = 5
 	FieldIsNotInGroup  = 6
 	FieldEx            = 7
+	FieldUnread        = 8
 )
 
 const (
@@ -275,6 +306,11 @@ const (
 	Directly                            = 2 //直接进群
 )
 
+const (
+	GroupRPCRecvSize = 30
+	GroupRPCSendSize = 30
+)
+
 const FriendAcceptTip = "You have successfully become friends, so start chatting"
 
 func GroupIsBanChat(status int32) bool {
@@ -300,3 +336,7 @@ const BigVersion = "v2"
 const LogFileName = "OpenIM.log"
 
 const StatisticsTimeInterval = 60
+
+const MaxNotificationNum = 100
+
+const CurrentVersion = "v2.3.3"
