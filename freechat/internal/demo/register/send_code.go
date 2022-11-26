@@ -1,13 +1,13 @@
 package register
 
 import (
-	"Open_IM/pkg/common/config"
-	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/db"
-	"Open_IM/pkg/common/db/mysql_model/im_mysql_model"
 	"Open_IM/pkg/common/log"
 	"Open_IM/pkg/common/utils"
 	"fmt"
+	"freechat/pkg/common/config"
+	"freechat/pkg/common/constant"
+	"freechat/pkg/common/db/mysql_model/im_mysql_model"
 	"math/rand"
 	"net/http"
 	"time"
