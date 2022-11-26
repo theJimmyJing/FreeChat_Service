@@ -1,8 +1,6 @@
 package main
 
 import (
-	"Open_IM/internal/demo/register"
-	"Open_IM/pkg/utils"
 	"flag"
 	"fmt"
 	"io"
@@ -12,8 +10,9 @@ import (
 	"Open_IM/pkg/common/config"
 	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/log"
-
 	promePkg "Open_IM/pkg/common/prometheus"
+	"Open_IM/pkg/utils"
+	"freechat/internal/demo/register"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,7 +31,7 @@ func main() {
 	{
 		authRouterGroup.POST("/code", register.SendVerificationCode)
 		authRouterGroup.POST("/verify", register.Verify)
-		authRouterGroup.POST("/password", register.SetPassword)
+		authRouterGroup.POST("/password", register.Register)
 		authRouterGroup.POST("/login", register.Login)
 		authRouterGroup.POST("/reset_password", register.ResetPassword)
 		authRouterGroup.POST("/check_login", register.CheckLoginLimit)

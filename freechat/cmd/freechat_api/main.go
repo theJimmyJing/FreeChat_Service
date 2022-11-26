@@ -1,17 +1,18 @@
 package main
 
 import (
-	freechat_user "Open_IM/internal/freechat/user"
-	"Open_IM/pkg/utils"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 	"strconv"
 
-	"Open_IM/pkg/common/config"
-	"Open_IM/pkg/common/constant"
-	"Open_IM/pkg/common/log"
+	freechat_user "Open_IM/freechat/internal/freechat/user"
+	"Open_IM/open_im/pkg/common/config"
+	"Open_IM/open_im/pkg/common/constant"
+	"Open_IM/open_im/pkg/common/log"
+	"Open_IM/open_im/pkg/utils"
+
 	"github.com/gin-gonic/gin"
 )
 

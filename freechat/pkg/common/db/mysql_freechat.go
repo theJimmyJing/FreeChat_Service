@@ -1,7 +1,7 @@
 package db
 
 import (
-	"Open_IM/pkg/common/config"
+	"freechat/pkg/common/config"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
