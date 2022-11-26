@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Open_IM/internal/demo/register"
+	"Open_IM/internal2/demo/register"
 	"Open_IM/pkg/utils"
 	"flag"
 	"fmt"

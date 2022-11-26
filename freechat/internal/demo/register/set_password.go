@@ -8,11 +8,10 @@ import (
 	imdb "Open_IM/pkg/common/db/mysql_model/im_mysql_model"
 	http2 "Open_IM/pkg/common/http"
 	"Open_IM/pkg/common/log"
-	"Open_IM/pkg/common/token_verify"
 	pbFriend "Open_IM/pkg/proto/friend"
 	"Open_IM/pkg/utils"
 	"encoding/json"
-	"math/big"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"time"
@@ -109,7 +108,7 @@ func Register(c *gin.Context) {
 	}
 	log.Info(params.OperationID, "begin store mysql", account, params.Password, "info", params.FaceURL, params.Nickname)
 
-	err = imdb.InsertRegister(account, params.Password, params.Ex, userID, params.AreaCode)
+	err = imdb.SetPassword(account, params.Password, params.Ex, userID, params.AreaCode, ip)
 	if err != nil {
 		log.NewError(params.OperationID, "set phone number password error", account, "err", err.Error())
 		c.JSON(http.StatusOK, gin.H{"errCode": constant.RegisterFailed, "errMsg": "register failed"})

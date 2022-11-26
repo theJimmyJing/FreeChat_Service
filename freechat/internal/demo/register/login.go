@@ -4,6 +4,7 @@ import (
 	api "Open_IM/pkg/base_info"
 	"Open_IM/pkg/common/config"
 	"Open_IM/pkg/common/constant"
+	"Open_IM/pkg/common/db"
 	"Open_IM/pkg/common/db/mysql_model/im_mysql_model"
 	http2 "Open_IM/pkg/common/http"
 	"Open_IM/pkg/common/log"
@@ -48,7 +49,7 @@ func Login(c *gin.Context) {
 			return
 		}
 	}
-	r, err := im_mysql_model.GetRegister(account, params.AreaCode)
+	r, err := im_mysql_model.GetRegister(account, params.AreaCode, params.UserID)
 	if err != nil {
 		log.NewError(params.OperationID, "user have not register", params.Password, account, err.Error())
 		c.JSON(http.StatusOK, gin.H{"errCode": constant.NotRegistered, "errMsg": "Mobile phone number is not registered"})

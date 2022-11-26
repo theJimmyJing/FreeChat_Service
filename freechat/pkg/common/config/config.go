@@ -74,6 +74,46 @@ type config struct {
 	Rtc struct {
 		SignalTimeout string `yaml:"signalTimeout"`
 	} `yaml:"rtc"`
+
+	Demo struct {
+		Port         []int  `yaml:"openImDemoPort"`
+		ListenIP     string `yaml:"listenIP"`
+		AliSMSVerify struct {
+			AccessKeyID                  string `yaml:"accessKeyId"`
+			AccessKeySecret              string `yaml:"accessKeySecret"`
+			SignName                     string `yaml:"signName"`
+			VerificationCodeTemplateCode string `yaml:"verificationCodeTemplateCode"`
+			Enable                       bool   `yaml:"enable"`
+		}
+		TencentSMS struct {
+			AppID                        string `yaml:"appID"`
+			Region                       string `yaml:"region"`
+			SecretID                     string `yaml:"secretID"`
+			SecretKey                    string `yaml:"secretKey"`
+			SignName                     string `yaml:"signName"`
+			VerificationCodeTemplateCode string `yaml:"verificationCodeTemplateCode"`
+			Enable                       bool   `yaml:"enable"`
+		}
+		SuperCode    string `yaml:"superCode"`
+		CodeTTL      int    `yaml:"codeTTL"`
+		UseSuperCode bool   `yaml:"useSuperCode"`
+		Mail         struct {
+			Title                   string `yaml:"title"`
+			Content                 string `yaml:"content"`
+			SenderMail              string `yaml:"senderMail"`
+			SenderAuthorizationCode string `yaml:"senderAuthorizationCode"`
+			SmtpAddr                string `yaml:"smtpAddr"`
+			SmtpPort                int    `yaml:"smtpPort"`
+		}
+		TestDepartMentID                        string   `yaml:"testDepartMentID"`
+		ImAPIURL                                string   `yaml:"imAPIURL"`
+		NeedInvitationCode                      bool     `yaml:"needInvitationCode"`
+		OnboardProcess                          bool     `yaml:"onboardProcess"`
+		JoinDepartmentIDList                    []string `yaml:"joinDepartmentIDList"`
+		JoinDepartmentGroups                    bool     `yaml:"joinDepartmentGroups"`
+		OaNotification                          bool     `yaml:"oaNotification"`
+		CreateOrganizationUserAndJoinDepartment bool     `json:"createOrganizationUserAndJoinDepartment"`
+	}
 }
 
 func init() {

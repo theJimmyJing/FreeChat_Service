@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Open_IM/pkg/common/config"
+	OpenIMCnf "Open_IM/pkg/common/config"
 	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/log"
 	promePkg "Open_IM/pkg/common/prometheus"
@@ -9,6 +9,7 @@ import (
 	"flag"
 	"fmt"
 	"freechat/internal/demo/register"
+	"freechat/pkg/common/config"
 	"io"
 	"os"
 	"strconv"
@@ -23,7 +24,7 @@ func main() {
 	gin.DefaultWriter = io.MultiWriter(f)
 	r := gin.Default()
 	r.Use(utils.CorsHandler())
-	if config.Config.Prometheus.Enable {
+	if OpenIMCnf.Config.Prometheus.Enable {
 		r.GET("/metrics", promePkg.PrometheusHandler())
 	}
 	authRouterGroup := r.Group("/demo")

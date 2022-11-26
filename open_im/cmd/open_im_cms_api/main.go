@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Open_IM/internal/cms_api"
+	"Open_IM/internal2/cms_api"
 	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/utils"
 	"flag"

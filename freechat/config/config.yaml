@@ -54,3 +54,49 @@ freechat:
 
 rtc:
   signalTimeout: 35
+
+#---------------demo configuration---------------------#
+#The following configuration items are applied to openIM Demo configuration
+#是否启动demo，如果自身没有账号体系，设置为true
+demoswitch: true
+demo:
+  listenIP: 0.0.0.0
+  #demo对外服务端口，默认即可，需要开放此端口或做nginx转发
+  openImDemoPort: [ 10004 ]
+  alismsverify: #阿里云短信配置，在阿里云申请成功后修改以下四项，enable为true则必须修改，阿里云为默认短信验证方式
+    accessKeyId: LTAI5tJPkn4HuuePdiLdGqe7
+    accessKeySecret: 4n9OJ7ZCVN1U6KeHDAtOyNeVZcjOuV
+    signName: 托云信息技术
+    verificationCodeTemplateCode: SMS_226810164
+    enable: false
+  tencentsms: #腾讯云短信配置，在腾讯云申请成功后，修改以下选项，enable为true则必须修改
+    appID:  2400000648
+    region: "ap-singapore"
+    secretID: IKIDra4JPGsFMDwQedMq42lESQBgwwgBQQAe
+    secretKey: HI6fz4uUotjJdiX6QUIrAE2buxlKdgU2
+    signName: ""
+    verificationCodeTemplateCode: 2902877
+    enable: true
+  superCode: 666666 #超级验证码，建议修改掉，收不到短信验证码时可以用此替代
+  needInvitationCode: false
+  #  second
+  codeTTL: 600
+  useSuperCode: true
+  mail: #仅支持qq邮箱，具体操作参考 https://service.mail.qq.com/cgi-bin/help?subtype=1&id=28&no=1001256 必须修改
+    title: "Your Freechat confirmation code is"
+    content: "<H3 style=\"display:block;margin bottom:15px;\">We noticed an attempt to operate your account that seems suspicious. Was this you?</h3>
+  <text style=\"display:block;\">if this was you </text>
+  <text style=\"display:block;\">Just to be safe, you'll nead to confirm this is really you by entering the following </text>
+  <text style=\"display:block;\">single-use code. </text>
+  <H2 style=\"display:block;margin bottom:15px;\">"
+    senderMail: "765567899@qq.com"
+    senderAuthorizationCode: "gxyausfoevlzbfag"
+    smtpAddr: "smtp.qq.com"
+    smtpPort: 25   #需开放此端口 出口方向
+  testDepartMentID: 001
+  imAPIURL: http://127.0.0.1:10002
+  onboardProcess: false # 是否开启注册流程
+  createOrganizationUserAndJoinDepartment: false
+  joinDepartmentIDList: [] # 用户注册进来默认加的部门ID列表 不填就随机
+  joinDepartmentGroups: false # 注册是否加部门群
+  oaNotification: false # 注册是否发送OA通知

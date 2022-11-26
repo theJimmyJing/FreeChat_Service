@@ -1,3 +1,3 @@
 package utils
 
-// put freechat internal utils here
+// put freechat internal2 utils here
