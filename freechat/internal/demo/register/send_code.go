@@ -72,6 +72,7 @@ func SendVerificationCode(c *gin.Context) {
 		return
 	}
 	var accountKey = account
+	var accountKeyRate = accountKey + "_rate"
 	switch params.UsedFor {
 	case constant.VerificationCodeForRegister:
 		_, err := im_mysql_model.GetRegister(account, "", params.UserID)
@@ -79,26 +80,27 @@ func SendVerificationCode(c *gin.Context) {
 			log.NewError(params.OperationID, "The account has been registered", params)
 			c.JSON(http.StatusOK, gin.H{"errCode": constant.HasRegistered, "errMsg": "The email has been registered"})
 			return
-			//需要邀请码
-			if config.Config.Demo.NeedInvitationCode {
-				err = im_mysql_model.CheckInvitationCode(params.InvitationCode)
-				if err != nil {
-					log.NewError(params.OperationID, "邀请码错误", params)
-					c.JSON(http.StatusOK, gin.H{"errCode": constant.InvitationError, "errMsg": "邀请码错误"})
-					return
-				}
-			}
-			accountKey = accountKey + "_" + constant.VerificationCodeForRegisterSuffix
-			ok, err := db.DB.JudgeAccountEXISTS(accountKey)
-			if ok || err != nil {
-				log.NewError(params.OperationID, "Repeat send code", params, accountKey)
-				c.JSON(http.StatusOK, gin.H{"errCode": constant.RepeatSendCode, "errMsg": "Repeat send code"})
+		}
+		//需要邀请码
+		if config.Config.Demo.NeedInvitationCode {
+			err = im_mysql_model.CheckInvitationCode(params.InvitationCode)
+			if err != nil {
+				log.NewError(params.OperationID, "邀请码错误", params)
+				c.JSON(http.StatusOK, gin.H{"errCode": constant.InvitationError, "errMsg": "邀请码错误"})
 				return
 			}
 		}
+		accountKey = accountKey + "_" + constant.VerificationCodeForRegisterSuffix
+		ok, err := db.DB.JudgeAccountEXISTS(accountKeyRate)
+		if ok || err != nil {
+			log.NewError(params.OperationID, "Repeat send code", params, accountKey)
+			c.JSON(http.StatusOK, gin.H{"errCode": constant.RepeatSendCode, "errMsg": "Repeat send code"})
+			return
+		}
+
 	case constant.VerificationCodeForReset:
 		accountKey = accountKey + "_" + constant.VerificationCodeForResetSuffix
-		ok, err := db.DB.JudgeAccountEXISTS(accountKey)
+		ok, err := db.DB.JudgeAccountEXISTS(accountKeyRate)
 		if ok || err != nil {
 			log.NewError(params.OperationID, "Repeat send code", params, accountKey)
 			c.JSON(http.StatusOK, gin.H{"errCode": constant.RepeatSendCode, "errMsg": "Repeat send code"})
@@ -106,20 +108,20 @@ func SendVerificationCode(c *gin.Context) {
 		}
 	case constant.VerificationCodeForLogin:
 		accountKey = accountKey + "_" + constant.VerificationCodeForLoginSuffix
-		ok, err := db.DB.JudgeAccountEXISTS(accountKey)
+		ok, err := db.DB.JudgeAccountEXISTS(accountKeyRate)
 		if ok || err != nil {
 			log.NewError(params.OperationID, "Repeat send code", params, accountKey)
 			c.JSON(http.StatusOK, gin.H{"errCode": constant.RepeatSendCode, "errMsg": "Repeat send code"})
 			return
 		}
-
 	}
 	rand.Seed(time.Now().UnixNano())
 	code := 100000 + rand.Intn(900000)
 	log.NewInfo(params.OperationID, params.UsedFor, "begin store redis", accountKey, code)
-	err := db.DB.SetAccountCode(accountKey, code, config.Config.Demo.CodeTTL)
-	if err != nil {
-		log.NewError(params.OperationID, "set redis error", accountKey, "err", err.Error())
+	err1 := db.DB.SetAccountCode(accountKeyRate, code, config.Config.Demo.CodeSendRate)
+	err2 := db.DB.SetAccountCode(accountKey, code, config.Config.Demo.CodeTTL)
+	if err1 != nil || err2 != nil {
+		log.NewError(params.OperationID, "set redis error", accountKey, "err1", err1.Error(), "err2", err2.Error())
 		c.JSON(http.StatusOK, gin.H{"errCode": constant.SmsSendCodeErr, "errMsg": "Enter the superCode directly in the verification code box, SuperCode can be configured in config.xml"})
 		return
 	}

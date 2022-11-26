@@ -2,10 +2,10 @@ package register
 
 import (
 	"Open_IM/pkg/common/config"
-	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/db"
 	"Open_IM/pkg/common/log"
 	"Open_IM/pkg/common/utils"
+	"freechat/pkg/common/constant"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -59,6 +59,8 @@ func Verify(c *gin.Context) {
 		accountKey = account + "_" + constant.VerificationCodeForRegisterSuffix
 	case constant.VerificationCodeForReset:
 		accountKey = account + "_" + constant.VerificationCodeForResetSuffix
+	case constant.VerificationCodeForLogin:
+		accountKey = account + "_" + constant.VerificationCodeForLoginSuffix
 	}
 
 	code, err := db.DB.GetAccountCode(accountKey)

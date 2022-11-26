@@ -96,6 +96,7 @@ type config struct {
 			Enable                       bool   `yaml:"enable"`
 		}
 		SuperCode    string `yaml:"superCode"`
+		CodeSendRate int    `yaml:"codeSendRate"`
 		CodeTTL      int    `yaml:"codeTTL"`
 		UseSuperCode bool   `yaml:"useSuperCode"`
 		Mail         struct {
