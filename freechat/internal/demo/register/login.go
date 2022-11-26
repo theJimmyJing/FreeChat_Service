@@ -2,15 +2,15 @@ package register
 
 import (
 	api "Open_IM/pkg/base_info"
-	"Open_IM/pkg/common/config"
-	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/db"
-	"Open_IM/pkg/common/db/mysql_model/im_mysql_model"
 	http2 "Open_IM/pkg/common/http"
 	"Open_IM/pkg/common/log"
 	"Open_IM/pkg/utils"
 	"encoding/json"
 	"fmt"
+	"freechat/pkg/common/config"
+	"freechat/pkg/common/constant"
+	"freechat/pkg/common/db/mysql_model/im_mysql_model"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

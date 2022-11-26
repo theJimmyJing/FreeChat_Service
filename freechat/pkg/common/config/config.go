@@ -18,6 +18,7 @@ var Config config
 
 type config struct {
 	ServerVersion string `yaml:"serverversion"`
+	Secret        string `yaml:"secret"`
 
 	Api struct {
 		GinPort  []int  `yaml:"openImApiPort"`

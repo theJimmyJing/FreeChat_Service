@@ -4,6 +4,7 @@
 # and it will not be read naturally.
 serverversion: 1.0.0
 #---------------Infrastructure configuration---------------------#
+secret: freechat
 
 mysql:
   dbMysqlAddress: [ 10.211.55.5:13306 ] #mysql地址 目前仅支持单机，默认即可
