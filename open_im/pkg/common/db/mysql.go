@@ -190,6 +190,6 @@ func initMysqlDB() {
 	return
 }
 
-func (m *mysqlDB) FreechatGormDB() *gorm.DB {
+func (m *mysqlDB) DefaultGormDB() *gorm.DB {
 	return DB.MysqlDB.db
 }

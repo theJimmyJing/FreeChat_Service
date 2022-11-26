@@ -2,9 +2,9 @@ package freechat_user
 
 import (
 	"Open_IM/pkg/common/constant"
-	"Open_IM/pkg/common/db"
-	fc_mysql_model "Open_IM/pkg/common/db/mysql_model/freechat_mysql_model"
 	"encoding/json"
+	"freechat/pkg/common/db"
+	fc_mysql_model "freechat/pkg/common/db/mysql_model/freechat_mysql_model"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

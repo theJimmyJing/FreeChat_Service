@@ -1,13 +1,10 @@
 package db
 
 import (
-	"Open_IM/pkg/common/config"
-	"github.com/dtm-labs/rockscache"
-	"go.mongodb.org/mongo-driver/x/bsonx"
-	"strings"
-
 	"Open_IM/pkg/utils"
 	"fmt"
+	"freechat/pkg/common/config"
+	"github.com/dtm-labs/rockscache"
 	go_redis "github.com/go-redis/redis/v8"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -18,7 +15,6 @@ import (
 	//"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	//	"go.mongodb.org/mongo-driver/mongo/options"
-	//go_redis "github.com/go-redis/redis/v8"
 )
 
 var DB DataBases
@@ -144,38 +140,4 @@ func init() {
 	// 弱一致性缓存，当一个key被标记删除，其他请求线程直接返回该key的value，适合高频并且生成很缓存很慢的情况 如大群发消息缓存的缓存
 	DB.WeakRc = rockscache.NewClient(DB.RDB, rockscache.NewDefaultOptions())
 	DB.WeakRc.Options.StrongConsistency = false
-}
-
-func createMongoIndex(client *mongo.Client, collection string, isUnique bool, keys ...string) error {
-	db := client.Database(config.Config.Mongo.DBDatabase).Collection(collection)
-	opts := options.CreateIndexes().SetMaxTime(10 * time.Second)
-
-	indexView := db.Indexes()
-	keysDoc := bsonx.Doc{}
-
-	// 复合索引
-	for _, key := range keys {
-		if strings.HasPrefix(key, "-") {
-			keysDoc = keysDoc.Append(strings.TrimLeft(key, "-"), bsonx.Int32(-1))
-		} else {
-			keysDoc = keysDoc.Append(key, bsonx.Int32(1))
-		}
-	}
-
-	// 创建索引
-	index := mongo.IndexModel{
-		Keys: keysDoc,
-	}
-	if isUnique == true {
-		index.Options = options.Index().SetUnique(true)
-	}
-	result, err := indexView.CreateOne(
-		context.Background(),
-		index,
-		opts,
-	)
-	if err != nil {
-		return utils.Wrap(err, result)
-	}
-	return nil
 }

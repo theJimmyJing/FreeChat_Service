@@ -1,15 +1,12 @@
 package im_mysql_model
 
 import (
-	"Open_IM/pkg/common/db"
+	"freechat/pkg/common/db"
 	_ "github.com/jinzhu/gorm"
 )
 
 func GetFacesURL() ([]db.UserFaces, error) {
-	dbConn, err := db.DB.MysqlDB.FreechatGormDB()
-	if err != nil {
-		return nil, err
-	}
+	dbConn := db.DB.MysqlDB.DefaultGormDB()
 	var r []db.UserFaces
 	return r, dbConn.Table("user_faces").Select("id,face_url").Find(&r).Error
 }

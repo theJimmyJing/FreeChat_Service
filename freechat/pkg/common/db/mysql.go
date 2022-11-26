@@ -1,8 +1,8 @@
 package db
 
 import (
-	"Open_IM/pkg/common/config"
 	"fmt"
+	"freechat/pkg/common/config"
 	"sync"
 	"time"
 
