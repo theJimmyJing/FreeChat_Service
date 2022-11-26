@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Open_IM/internal2/demo/register"
+	"Open_IM/internal/demo/register"
 	"Open_IM/pkg/utils"
 	"flag"
 	"fmt"
@@ -41,7 +41,7 @@ func main() {
 	{
 		demoRouterGroup.POST("/code", register.SendVerificationCode)
 		demoRouterGroup.POST("/verify", register.Verify)
-		demoRouterGroup.POST("/password", register.Register)
+		demoRouterGroup.POST("/password", register.SetPassword)
 		demoRouterGroup.POST("/login", register.Login)
 		demoRouterGroup.POST("/reset_password", register.ResetPassword)
 		demoRouterGroup.POST("/check_login", register.CheckLoginLimit)

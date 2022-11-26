@@ -9,19 +9,13 @@ import (
 
 func GetRegister(account, areaCode, userID string) (*db.Register, error) {
 	var r db.Register
-	return &r, db.DB.MysqlDB.DefaultGormDB().Table("registers").Where("account = ?",
-		account).Take(&r).Error
+	return &r, db.DB.MysqlDB.DefaultGormDB().Table("registers").Where("user_id = ? and user_id != ? or account = ? or account =? and area_code=?",
+		userID, "", account, account, areaCode).Take(&r).Error
 }
 
 func GetRegisterInfo(userID string) (*db.Register, error) {
 	var r db.Register
 	return &r, db.DB.MysqlDB.DefaultGormDB().Table("registers").Where("user_id = ?", userID).Take(&r).Error
-}
-
-func GetEmail(userID string) (*db.User, error) {
-	dbConn := db.DB.MysqlDB.DefaultGormDB()
-	var r db.User
-	return &r, dbConn.Table("users").Where("user_id = ?", userID).Take(&r).Error
 }
 
 func SetPassword(account, password, ex, userID, areaCode, ip string) error {

@@ -28,7 +28,7 @@ RUN ln -fs /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && dpkg-reconfigure 
 
 
 #set directory to map logs,config file,script file.
-VOLUME ["/FreeChat_Service/logs","/FreeChat_Service/config","/FreeChat_Service/script","/FreeChat_Service/db/sdk"]
+VOLUME ["/Open-IM-Server/logs","/Open-IM-Server/config","/Open-IM-Server/script","/Open-IM-Server/db/sdk"]
 
 #Copy scripts files and binary files to the blank image
 COPY --from=build /Open-IM-Server/script /Open-IM-Server/script

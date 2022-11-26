@@ -499,7 +499,6 @@ type config struct {
 		UseSuperCode bool   `yaml:"useSuperCode"`
 		Mail         struct {
 			Title                   string `yaml:"title"`
-			Content                 string `yaml:"content"`
 			SenderMail              string `yaml:"senderMail"`
 			SenderAuthorizationCode string `yaml:"senderAuthorizationCode"`
 			SmtpAddr                string `yaml:"smtpAddr"`

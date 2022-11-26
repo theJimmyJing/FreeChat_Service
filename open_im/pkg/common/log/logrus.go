@@ -164,7 +164,7 @@ func WarnByKv(tipInfo, OperationID string, args ...interface{}) {
 	logger.WithFields(fields).Warn(tipInfo)
 }
 
-//internal2 method
+//internal method
 func argsHandle(OperationID string, fields logrus.Fields, args []interface{}) {
 	for i := 0; i < len(args); i += 2 {
 		if i+1 < len(args) {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Open_IM/internal2/rpc/user"
+	"Open_IM/internal/rpc/user"
 	"Open_IM/pkg/common/config"
 	"Open_IM/pkg/common/constant"
 	promePkg "Open_IM/pkg/common/prometheus"

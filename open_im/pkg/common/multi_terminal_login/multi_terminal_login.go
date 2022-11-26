@@ -2,8 +2,8 @@ package multi_terminal_login
 
 //
 //import (
-//	"Open_IM/internal2/push/content_struct"
-//	"Open_IM/internal2/push/logic"
+//	"Open_IM/internal/push/content_struct"
+//	"Open_IM/internal/push/logic"
 //	"Open_IM/pkg/common/config"
 //	"Open_IM/pkg/common/constant"
 //	"Open_IM/pkg/common/db"

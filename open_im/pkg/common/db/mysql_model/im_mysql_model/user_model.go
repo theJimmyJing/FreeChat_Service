@@ -13,9 +13,8 @@ import (
 
 func init() {
 	for k, v := range config.Config.Manager.AppManagerUid {
-		user, err := GetUserByUserID(v)
+		_, err := GetUserByUserID(v)
 		if err != nil {
-			fmt.Println("GetUserByUserID failed ", err.Error(), v, user)
 		} else {
 			continue
 		}
@@ -25,7 +24,6 @@ func init() {
 			appMgr.Nickname = config.Config.Manager.AppSysNotificationName
 		} else {
 			appMgr.Nickname = "AppManager" + utils.IntToString(k+1)
-			appMgr.Email = "AppManager" + utils.IntToString(k+1) + "@freechat.world"
 		}
 		appMgr.AppMangerLevel = constant.AppAdmin
 		err = UserRegister(appMgr)

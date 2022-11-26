@@ -906,7 +906,7 @@ func (m *SignalReq) GetReject() *SignalRejectReq {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal2 use of the proto package.
+// XXX_OneofFuncs is for the internal use of the proto package.
 func (*SignalReq) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
 	return _SignalReq_OneofMarshaler, _SignalReq_OneofUnmarshaler, _SignalReq_OneofSizer, []interface{}{
 		(*SignalReq_Invite)(nil),
@@ -1173,7 +1173,7 @@ func (m *SignalResp) GetReject() *SignalRejectReply {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal2 use of the proto package.
+// XXX_OneofFuncs is for the internal use of the proto package.
 func (*SignalResp) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
 	return _SignalResp_OneofMarshaler, _SignalResp_OneofUnmarshaler, _SignalResp_OneofSizer, []interface{}{
 		(*SignalResp_Invite)(nil),

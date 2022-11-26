@@ -1,7 +1,7 @@
 package main
 
 import (
-	rpcMessageCMS "Open_IM/internal2/rpc/admin_cms"
+	rpcMessageCMS "Open_IM/internal/rpc/admin_cms"
 	"Open_IM/pkg/common/config"
 	"Open_IM/pkg/common/constant"
 	promePkg "Open_IM/pkg/common/prometheus"

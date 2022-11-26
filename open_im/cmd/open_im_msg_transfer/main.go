@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Open_IM/internal2/msg_transfer/logic"
+	"Open_IM/internal/msg_transfer/logic"
 	"Open_IM/pkg/common/config"
 	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/log"
