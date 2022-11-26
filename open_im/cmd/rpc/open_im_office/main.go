@@ -1,7 +1,7 @@
 package main
 
 import (
-	rpc "Open_IM/internal/rpc/office"
+	rpc "Open_IM/internal2/rpc/office"
 	"Open_IM/pkg/common/config"
 	"Open_IM/pkg/common/constant"
 	promePkg "Open_IM/pkg/common/prometheus"

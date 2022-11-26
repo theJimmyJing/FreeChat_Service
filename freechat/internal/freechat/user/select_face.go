@@ -18,7 +18,7 @@ type FaceURL struct {
 func SelectFace(c *gin.Context) {
 	faces, err := fc_mysql_model.GetFacesURL()
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"errCode": constant.ErrDB, "errMsg": "internal err"})
+		c.JSON(http.StatusOK, gin.H{"errCode": constant.ErrDB, "errMsg": "internal2 err"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"errCode": constant.NoError, "errMsg": "", "data": convert(faces)})

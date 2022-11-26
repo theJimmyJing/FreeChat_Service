@@ -1,7 +1,7 @@
 package main
 
 import (
-	rpcAuth "Open_IM/internal/rpc/auth"
+	rpcAuth "Open_IM/internal2/rpc/auth"
 	"Open_IM/pkg/common/config"
 	"Open_IM/pkg/common/constant"
 	promePkg "Open_IM/pkg/common/prometheus"

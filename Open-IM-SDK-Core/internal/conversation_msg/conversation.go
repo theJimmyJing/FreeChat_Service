@@ -562,7 +562,7 @@ func (c *Conversation) getHistoryMessageList(callback open_im_sdk_callback.Base,
 			log.Error(operationID, "Parsing data error:", err.Error(), temp)
 			continue
 		}
-		log.Debug(operationID, "internal unmarshal cost time", time.Since(tt))
+		log.Debug(operationID, "internal2 unmarshal cost time", time.Since(tt))
 
 		switch sessionType {
 		case constant.GroupChatType:
@@ -834,7 +834,7 @@ func (c *Conversation) getAdvancedHistoryMessageList(callback open_im_sdk_callba
 			log.Error(operationID, "Parsing data error:", err.Error(), temp)
 			continue
 		}
-		log.Debug(operationID, "internal unmarshal cost time", time.Since(tt))
+		log.Debug(operationID, "internal2 unmarshal cost time", time.Since(tt))
 
 		switch sessionType {
 		case constant.GroupChatType:
@@ -1241,7 +1241,7 @@ func (c *Conversation) markC2CMessageAsRead(callback open_im_sdk_callback.Base, 
 		v.AttachedInfo = utils.StructToJsonString(attachInfo)
 		err = c.db.UpdateMessage(v)
 		if err != nil {
-			log.Error("internal", "setMessageHasReadByMsgID err:", err, "ClientMsgID", v)
+			log.Error("internal2", "setMessageHasReadByMsgID err:", err, "ClientMsgID", v)
 			continue
 		}
 	}
@@ -1469,7 +1469,7 @@ func (c *Conversation) deleteMessageFromLocalStorage(callback open_im_sdk_callba
 		}
 		err = c.db.UpdateColumnsConversation(conversation.ConversationID, map[string]interface{}{"latest_msg_send_time": conversation.LatestMsgSendTime, "latest_msg": conversation.LatestMsg})
 		if err != nil {
-			log.Error("internal", "updateConversationLatestMsgModel err: ", err)
+			log.Error("internal2", "updateConversationLatestMsgModel err: ", err)
 		} else {
 			_ = common.TriggerCmdUpdateConversation(common.UpdateConNode{ConID: conversationID, Action: constant.ConChange, Args: []string{conversationID}}, c.GetCh())
 		}

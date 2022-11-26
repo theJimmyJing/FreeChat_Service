@@ -6,7 +6,7 @@ import (
 	"open_im_sdk/pkg/log"
 	"open_im_sdk/pkg/server_api_params"
 	"open_im_sdk/pkg/utils"
-	//	"open_im_sdk/internal/interaction"
+	//	"open_im_sdk/internal2/interaction"
 	"open_im_sdk/internal/login"
 	"open_im_sdk/sdk_struct"
 )

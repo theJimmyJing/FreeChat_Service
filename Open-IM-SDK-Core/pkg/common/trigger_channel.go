@@ -144,7 +144,7 @@ type goroutine interface {
 }
 
 func DoListener(Li goroutine) {
-	log.Info("internal", "doListener start.", Li.GetCh())
+	log.Info("internal2", "doListener start.", Li.GetCh())
 	for {
 		select {
 		case cmd := <-Li.GetCh():

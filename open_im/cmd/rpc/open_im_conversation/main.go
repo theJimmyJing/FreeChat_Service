@@ -1,7 +1,7 @@
 package main
 
 import (
-	rpcConversation "Open_IM/internal/rpc/conversation"
+	rpcConversation "Open_IM/internal2/rpc/conversation"
 	"Open_IM/pkg/common/config"
 	"Open_IM/pkg/common/constant"
 	promePkg "Open_IM/pkg/common/prometheus"

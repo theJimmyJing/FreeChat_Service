@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"open_im_sdk/pkg/log"
 	"open_im_sdk/pkg/utils"
-	//"open_im_sdk/internal/open_im_sdk"
+	//"open_im_sdk/internal2/open_im_sdk"
 	//"open_im_sdk/pkg/utils"
-	//	"open_im_sdk/internal/common"
+	//	"open_im_sdk/internal2/common"
 )
 
 type XBase struct {

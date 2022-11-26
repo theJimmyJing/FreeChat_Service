@@ -210,7 +210,7 @@ func (c *Conversation) GetTotalUnreadMsgCount(callback open_im_sdk_callback.Base
 //
 func (c *Conversation) SetConversationListener(listener open_im_sdk_callback.OnConversationListener) {
 	if c.ConversationListener != nil {
-		log.Error("internal", "just only set on listener")
+		log.Error("internal2", "just only set on listener")
 		return
 	}
 	c.ConversationListener = listener
@@ -273,7 +273,7 @@ func (c *Conversation) CreateAdvancedTextMessage(text, messageEntityList, operat
 	s := sdk_struct.MsgStruct{}
 	err := json.Unmarshal([]byte(messageEntityList), &messageEntitys)
 	if err != nil {
-		log.Error("internal", "messages unmarshal err", err.Error())
+		log.Error("internal2", "messages unmarshal err", err.Error())
 		return ""
 	}
 	c.initBasicInfo(&s, constant.UserMsgType, constant.AdvancedText, operationID)
@@ -368,15 +368,15 @@ func (c *Conversation) CreateVideoMessageFromFullPath(videoFullPath string, vide
 		dstFile := utils.FileTmpPath(videoFullPath, c.DataDir) //a->b
 		s, err := utils.CopyFile(videoFullPath, dstFile)
 		if err != nil {
-			log.Error("internal", "open file failed: ", err, videoFullPath)
+			log.Error("internal2", "open file failed: ", err, videoFullPath)
 		}
-		log.Info("internal", "videoFullPath dstFile", videoFullPath, dstFile, s)
+		log.Info("internal2", "videoFullPath dstFile", videoFullPath, dstFile, s)
 		dstFile = utils.FileTmpPath(snapshotFullPath, c.DataDir) //a->b
 		s, err = utils.CopyFile(snapshotFullPath, dstFile)
 		if err != nil {
-			log.Error("internal", "open file failed: ", err, snapshotFullPath)
+			log.Error("internal2", "open file failed: ", err, snapshotFullPath)
 		}
-		log.Info("internal", "snapshotFullPath dstFile", snapshotFullPath, dstFile, s)
+		log.Info("internal2", "snapshotFullPath dstFile", snapshotFullPath, dstFile, s)
 		wg.Done()
 	}()
 
@@ -392,14 +392,14 @@ func (c *Conversation) CreateVideoMessageFromFullPath(videoFullPath string, vide
 	}
 	fi, err := os.Stat(s.VideoElem.VideoPath)
 	if err != nil {
-		log.Error("internal", "get file Attributes error", err.Error())
+		log.Error("internal2", "get file Attributes error", err.Error())
 		return ""
 	}
 	s.VideoElem.VideoSize = fi.Size()
 	if snapshotFullPath != "" {
 		imageInfo, err := getImageInfo(s.VideoElem.SnapshotPath)
 		if err != nil {
-			log.Error("internal", "get Image Attributes error", err.Error())
+			log.Error("internal2", "get Image Attributes error", err.Error())
 			return ""
 		}
 		s.VideoElem.SnapshotHeight = imageInfo.Height
@@ -418,7 +418,7 @@ func (c *Conversation) CreateFileMessageFromFullPath(fileFullPath string, fileNa
 		_, err := utils.CopyFile(fileFullPath, dstFile)
 		log.Info(operationID, "copy file, ", fileFullPath, dstFile)
 		if err != nil {
-			log.Error("internal", "open file failed: ", err.Error(), fileFullPath)
+			log.Error("internal2", "open file failed: ", err.Error(), fileFullPath)
 		}
 		wg.Done()
 	}()
@@ -427,7 +427,7 @@ func (c *Conversation) CreateFileMessageFromFullPath(fileFullPath string, fileNa
 	s.FileElem.FilePath = fileFullPath
 	fi, err := os.Stat(fileFullPath)
 	if err != nil {
-		log.Error("internal", "get file Attributes error", err.Error())
+		log.Error("internal2", "get file Attributes error", err.Error())
 		return ""
 	}
 	s.FileElem.FileSize = fi.Size()
@@ -441,9 +441,9 @@ func (c *Conversation) CreateImageMessageFromFullPath(imageFullPath, operationID
 	go func() {
 		dstFile := utils.FileTmpPath(imageFullPath, c.DataDir) //a->b
 		_, err := utils.CopyFile(imageFullPath, dstFile)
-		log.Info("internal", "copy file, ", imageFullPath, dstFile)
+		log.Info("internal2", "copy file, ", imageFullPath, dstFile)
 		if err != nil {
-			log.Error("internal", "open file failed: ", err, imageFullPath)
+			log.Error("internal2", "open file failed: ", err, imageFullPath)
 		}
 		wg.Done()
 	}()
@@ -451,10 +451,10 @@ func (c *Conversation) CreateImageMessageFromFullPath(imageFullPath, operationID
 	s := sdk_struct.MsgStruct{}
 	c.initBasicInfo(&s, constant.UserMsgType, constant.Picture, operationID)
 	s.PictureElem.SourcePath = imageFullPath
-	log.Info("internal", "ImageMessage  path:", s.PictureElem.SourcePath)
+	log.Info("internal2", "ImageMessage  path:", s.PictureElem.SourcePath)
 	imageInfo, err := getImageInfo(s.PictureElem.SourcePath)
 	if err != nil {
-		log.Error("internal", "getImageInfo err:", err.Error())
+		log.Error("internal2", "getImageInfo err:", err.Error())
 		return ""
 	}
 	s.PictureElem.SourcePicture.Width = imageInfo.Width
@@ -471,9 +471,9 @@ func (c *Conversation) CreateSoundMessageFromFullPath(soundPath string, duration
 	go func() {
 		dstFile := utils.FileTmpPath(soundPath, c.DataDir) //a->b
 		_, err := utils.CopyFile(soundPath, dstFile)
-		log.Info("internal", "copy file, ", soundPath, dstFile)
+		log.Info("internal2", "copy file, ", soundPath, dstFile)
 		if err != nil {
-			log.Error("internal", "open file failed: ", err, soundPath)
+			log.Error("internal2", "open file failed: ", err, soundPath)
 		}
 		wg.Done()
 	}()
@@ -483,7 +483,7 @@ func (c *Conversation) CreateSoundMessageFromFullPath(soundPath string, duration
 	s.SoundElem.Duration = duration
 	fi, err := os.Stat(s.SoundElem.SoundPath)
 	if err != nil {
-		log.Error("internal", "getSoundInfo err:", err.Error(), s.SoundElem.SoundPath)
+		log.Error("internal2", "getSoundInfo err:", err.Error(), s.SoundElem.SoundPath)
 		return ""
 	}
 	s.SoundElem.DataSize = fi.Size()
@@ -495,10 +495,10 @@ func (c *Conversation) CreateImageMessage(imagePath, operationID string) string 
 	s := sdk_struct.MsgStruct{}
 	c.initBasicInfo(&s, constant.UserMsgType, constant.Picture, operationID)
 	s.PictureElem.SourcePath = c.DataDir + imagePath
-	log.Debug("internal", "ImageMessage  path:", s.PictureElem.SourcePath)
+	log.Debug("internal2", "ImageMessage  path:", s.PictureElem.SourcePath)
 	imageInfo, err := getImageInfo(s.PictureElem.SourcePath)
 	if err != nil {
-		log.Error("internal", "get imageInfo err", err.Error())
+		log.Error("internal2", "get imageInfo err", err.Error())
 		return ""
 	}
 	s.PictureElem.SourcePicture.Width = imageInfo.Width
@@ -982,7 +982,7 @@ func (c *Conversation) CreateSoundMessage(soundPath string, duration int64, oper
 	s.SoundElem.Duration = duration
 	fi, err := os.Stat(s.SoundElem.SoundPath)
 	if err != nil {
-		log.Error("internal", "get sound info err", err.Error())
+		log.Error("internal2", "get sound info err", err.Error())
 		return ""
 	}
 	s.SoundElem.DataSize = fi.Size()
@@ -1011,14 +1011,14 @@ func (c *Conversation) CreateVideoMessage(videoPath string, videoType string, du
 	}
 	fi, err := os.Stat(s.VideoElem.VideoPath)
 	if err != nil {
-		log.Error("internal", "get video file error", err.Error())
+		log.Error("internal2", "get video file error", err.Error())
 		return ""
 	}
 	s.VideoElem.VideoSize = fi.Size()
 	if snapshotPath != "" {
 		imageInfo, err := getImageInfo(s.VideoElem.SnapshotPath)
 		if err != nil {
-			log.Error("internal", "get snapshot info ", err.Error())
+			log.Error("internal2", "get snapshot info ", err.Error())
 			return ""
 		}
 		s.VideoElem.SnapshotHeight = imageInfo.Height
@@ -1044,7 +1044,7 @@ func (c *Conversation) CreateFileMessage(filePath string, fileName, operationID 
 	s.FileElem.FileName = fileName
 	fi, err := os.Stat(s.FileElem.FilePath)
 	if err != nil {
-		log.Error("internal", "get file message err", err.Error())
+		log.Error("internal2", "get file message err", err.Error())
 		return ""
 	}
 	s.FileElem.FileSize = fi.Size()
@@ -1057,7 +1057,7 @@ func (c *Conversation) CreateMergerMessage(messageList, title, summaryList, oper
 	s := sdk_struct.MsgStruct{}
 	err := json.Unmarshal([]byte(messageList), &messages)
 	if err != nil {
-		log.Error("internal", "messages Unmarshal err", err.Error())
+		log.Error("internal2", "messages Unmarshal err", err.Error())
 		return ""
 	}
 	_ = json.Unmarshal([]byte(summaryList), &summaries)
@@ -1081,11 +1081,11 @@ func (c *Conversation) CreateForwardMessage(m, operationID string) string {
 	s := sdk_struct.MsgStruct{}
 	err := json.Unmarshal([]byte(m), &s)
 	if err != nil {
-		log.Error("internal", "messages Unmarshal err", err.Error())
+		log.Error("internal2", "messages Unmarshal err", err.Error())
 		return ""
 	}
 	if s.Status != constant.MsgStatusSendSuccess {
-		log.Error("internal", "only send success message can be Forward")
+		log.Error("internal2", "only send success message can be Forward")
 		return ""
 	}
 	c.initBasicInfo(&s, constant.UserMsgType, s.ContentType, operationID)
