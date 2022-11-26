@@ -2,6 +2,9 @@ module freechat
 
 go 1.18
 
+replace (
+	Open_IM => ../Open_IM
+)
 require (
 	github.com/alibabacloud-go/darabonba-openapi v0.2.1
 	github.com/alibabacloud-go/dysmsapi-20170525/v2 v2.0.18
@@ -15,6 +18,7 @@ require (
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/gorm v1.24.2
+    Open_IM v0.0.0
 )
 
 require (

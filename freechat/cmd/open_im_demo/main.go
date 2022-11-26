@@ -1,18 +1,17 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"io"
-	"os"
-	"strconv"
-
 	"Open_IM/pkg/common/config"
 	"Open_IM/pkg/common/constant"
 	"Open_IM/pkg/common/log"
 	promePkg "Open_IM/pkg/common/prometheus"
 	"Open_IM/pkg/utils"
+	"flag"
+	"fmt"
 	"freechat/internal/demo/register"
+	"io"
+	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
