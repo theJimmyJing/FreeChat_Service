@@ -66,7 +66,8 @@ func Register(c *gin.Context) {
 		params.Nickname = "freechat" + strconv.Itoa(rd)
 	}
 	account := params.Email
-	if params.VerificationCode != config.Config.Demo.SuperCode {
+	if (config.Config.Demo.UseSuperCode && params.VerificationCode != config.Config.Demo.SuperCode) ||
+		!config.Config.Demo.UseSuperCode {
 		accountKey := account + "_" + constant.VerificationCodeForRegisterSuffix
 		v, err := db.DB.GetAccountCode(accountKey)
 		if err != nil || v != params.VerificationCode {

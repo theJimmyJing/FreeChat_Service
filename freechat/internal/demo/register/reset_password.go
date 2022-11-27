@@ -35,7 +35,8 @@ func ResetPassword(c *gin.Context) {
 		account = req.PhoneNumber
 	}
 
-	if (config.Config.Demo.UseSuperCode && req.VerificationCode != config.Config.Demo.SuperCode) || !config.Config.Demo.UseSuperCode {
+	if (config.Config.Demo.UseSuperCode && req.VerificationCode != config.Config.Demo.SuperCode) ||
+		!config.Config.Demo.UseSuperCode {
 		accountKey := req.AreaCode + account + "_" + constant.VerificationCodeForResetSuffix
 		v, err := db.DB.GetAccountCode(accountKey)
 		if err != nil || v != req.VerificationCode {
