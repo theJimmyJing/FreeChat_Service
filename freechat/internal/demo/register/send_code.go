@@ -62,7 +62,7 @@ func SendVerificationCode(c *gin.Context) {
 	} else {
 		r, err := im_mysql_model.GetEmail(params.UserID)
 		if err != nil || r.Email == "" {
-			c.JSON(http.StatusOK, gin.H{"errCode": constant.NotRegistered, "errMsg": err.Error()})
+			c.JSON(http.StatusOK, gin.H{"errCode": constant.NotRegistered, "errMsg": "not registered"})
 			return
 		}
 		account = r.Email
